@@ -3,29 +3,47 @@ import threading
 from scraper import scrape_multiple_matches
 from calculator import normalize_odds, find_best_tips
 
-COUNTRY_FLAGS = {
-    "Deutschland": "🇩🇪", "Schottland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Ungarn": "🇭🇺", "Schweiz": "🇨🇭",
-    "Spanien": "🇪🇸", "Kroatien": "🇭🇷", "Italien": "🇮🇹", "Albanien": "🇦🇱",
-    "Slowenien": "🇸🇮", "Dänemark": "🇩🇰", "Serbien": "🇷🇸", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-    "Polen": "🇵🇱", "Niederlande": "🇳🇱", "Österreich": "🇦🇹", "Frankreich": "🇫🇷",
-    "Belgien": "🇧🇪", "Slowakei": "🇸🇰", "Rumänien": "🇷🇴", "Ukraine": "🇺🇦",
-    "Türkei": "🇹🇷", "Georgien": "🇬🇪", "Portugal": "🇵🇹", "Tschechien": "🇨🇿",
-    "Mexiko": "🇲🇽", "Südafrika": "🇿🇦", "Südkorea": "🇰🇷", "Brasilien": "🇧🇷",
-    "Argentinien": "🇦🇷", "USA": "🇺🇸", "Kamerun": "🇨🇲", "Japan": "🇯🇵",
-    "Kanada": "🇨🇦", "Uruguay": "🇺🇾", "Kolumbien": "🇨🇴", "Ecuador": "🇪🇨",
-    "Chile": "🇨🇱", "Peru": "🇵🇪", "Jamaika": "🇯🇲", "Paraguay": "🇵🇾",
-    "Bolivien": "🇧🇴", "Venezuela": "🇻🇪", "Costa Rica": "🇨🇷", "Panama": "🇵🇦",
-    "Marokko": "🇲🇦", "Senegal": "🇸🇳", "Katar": "🇶🇦", "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
-    "Irland": "🇮🇪", "Nordirland": "🇬🇧", "Island": "🇮🇸", "Schweden": "🇸🇪",
-    "Norwegen": "🇳🇴", "Finnland": "🇫🇮", "Bosnien": "🇧🇦", "Montenegro": "🇲🇪",
-    "Griechenland": "🇬🇷"
+import urllib.request
+import io
+from PIL import Image
+
+COUNTRY_CODES = {
+    "Deutschland": "de", "Schottland": "gb-sct", "Ungarn": "hu", "Schweiz": "ch",
+    "Spanien": "es", "Kroatien": "hr", "Italien": "it", "Albanien": "al",
+    "Slowenien": "si", "Dänemark": "dk", "Serbien": "rs", "England": "gb-eng",
+    "Polen": "pl", "Niederlande": "nl", "Österreich": "at", "Frankreich": "fr",
+    "Belgien": "be", "Slowakei": "sk", "Rumänien": "ro", "Ukraine": "ua",
+    "Türkei": "tr", "Georgien": "ge", "Portugal": "pt", "Tschechien": "cz",
+    "Mexiko": "mx", "Südafrika": "za", "Südkorea": "kr", "Brasilien": "br",
+    "Argentinien": "ar", "USA": "us", "Kamerun": "cm", "Japan": "jp",
+    "Kanada": "ca", "Uruguay": "uy", "Kolumbien": "co", "Ecuador": "ec",
+    "Chile": "cl", "Peru": "pe", "Jamaika": "jm", "Paraguay": "py",
+    "Bolivien": "bo", "Venezuela": "ve", "Costa Rica": "cr", "Panama": "pa",
+    "Marokko": "ma", "Senegal": "sn", "Katar": "qa", "Wales": "gb-wls",
+    "Irland": "ie", "Nordirland": "gb-nir", "Island": "is", "Schweden": "se",
+    "Norwegen": "no", "Finnland": "fi", "Bosnien": "ba", "Montenegro": "me",
+    "Griechenland": "gr"
 }
 
-def add_flags(match_name):
-    for country, flag in COUNTRY_FLAGS.items():
-        if country in match_name and flag not in match_name:
-            match_name = match_name.replace(country, f"{flag} {country}")
-    return match_name
+_FLAG_CACHE = {}
+
+def get_flag_image(country_name):
+    code = COUNTRY_CODES.get(country_name)
+    if not code:
+        return None
+    if code in _FLAG_CACHE:
+        return _FLAG_CACHE[code]
+    try:
+        url = f"https://flagcdn.com/w40/{code}.png"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            img_data = response.read()
+        img = Image.open(io.BytesIO(img_data))
+        ctk_img = ctk.CTkImage(light_image=img, size=(24, 18))
+        _FLAG_CACHE[code] = ctk_img
+        return ctk_img
+    except Exception:
+        return None
 
 class KicktippApp(ctk.CTk):
     def __init__(self):
@@ -214,11 +232,26 @@ class KicktippApp(ctk.CTk):
             card = ctk.CTkFrame(self.scroll_frame, fg_color="#FFFFFF", border_width=1, border_color="#D5DBDB", corner_radius=10)
             card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
             
-            # Titel
+            # Titel Container
             raw_name = match.get('match_name', 'Unbekannt')
-            display_name = add_flags(raw_name)
-            title = ctk.CTkLabel(card, text=display_name, font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32", wraplength=250)
-            title.pack(pady=(10, 5), padx=10)
+            title_frame = ctk.CTkFrame(card, fg_color="transparent")
+            title_frame.pack(pady=(10, 5), padx=10)
+            
+            teams = raw_name.replace(" vs ", " - ").split(" - ")
+            
+            for idx, t_name in enumerate(teams):
+                t_name = t_name.strip()
+                flag_img = get_flag_image(t_name)
+                
+                if flag_img:
+                    lbl = ctk.CTkLabel(title_frame, text=f" {t_name}", image=flag_img, compound="left", font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32")
+                else:
+                    lbl = ctk.CTkLabel(title_frame, text=t_name, font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32")
+                lbl.pack(side="left")
+                
+                if idx < len(teams) - 1:
+                    sep = ctk.CTkLabel(title_frame, text=" - ", font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32")
+                    sep.pack(side="left", padx=5)
             
             if match.get("error"):
                 err_lbl = ctk.CTkLabel(card, text=match["error"], text_color="#E74C3C", wraplength=250)
