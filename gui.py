@@ -92,46 +92,42 @@ class KicktippApp(ctk.CTk):
         self.scroll_frame.grid_columnconfigure(0, weight=1)
         self.scroll_frame.grid_columnconfigure(1, weight=1)
         
-        # Shared Odds Textbox am Boden (wird erst bei Klick sichtbar)
-        self.shared_odds_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", border_width=1, border_color="#D5DBDB")
-        
-        self.odds_header_frame = ctk.CTkFrame(self.shared_odds_frame, fg_color="transparent")
-        self.odds_header_frame.pack(fill="x", padx=10, pady=(10, 0))
-        
-        self.shared_odds_label = ctk.CTkLabel(self.odds_header_frame, text="Rohe Quoten:", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
-        self.shared_odds_label.pack(side="left")
-        
-        self.close_odds_btn = ctk.CTkButton(self.odds_header_frame, text="✖ Schließen", width=80, fg_color="transparent", text_color="#E74C3C", hover_color="#FADBD8", command=self.hide_odds)
-        self.close_odds_btn.pack(side="right")
-        
-        self.shared_odds_textbox = ctk.CTkTextbox(self.shared_odds_frame, height=120, fg_color=self.BEIGE_STRONG, text_color=self.TEXT_DARK)
-        self.shared_odds_textbox.pack(pady=10, padx=10, fill="x")
+        # Die Quoten werden jetzt in einem separaten Pop-Up Fenster angezeigt.
         
     def get_urls(self):
         text = self.url_textbox.get("0.0", "end").strip()
         lines = [line.strip() for line in text.split('\n') if line.strip().startswith("http")]
         return lines
 
-    def hide_odds(self):
-        self.shared_odds_frame.pack_forget()
-
     def show_odds(self, match_name, odds_dict):
-        self.shared_odds_label.configure(text=f"Rohe Quoten: {match_name}")
-        self.shared_odds_textbox.configure(state="normal")
-        self.shared_odds_textbox.delete("0.0", "end")
+        # Neues Fenster für die Quoten erstellen
+        popup = ctk.CTkToplevel(self)
+        popup.title("Quoten überprüfen")
+        popup.geometry("300x400")
+        popup.configure(fg_color="#F0F3F4")
+        
+        # Fokus auf das neue Fenster setzen
+        popup.focus()
+        popup.attributes("-topmost", True)
+        
+        lbl = ctk.CTkLabel(popup, text=match_name, font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32")
+        lbl.pack(pady=15)
+        
+        textbox = ctk.CTkTextbox(popup, fg_color=self.BEIGE_STRONG, text_color=self.TEXT_DARK, border_color="#D5DBDB", border_width=1)
+        textbox.pack(pady=10, padx=20, fill="both", expand=True)
         
         if not odds_dict:
-            self.shared_odds_textbox.insert("end", "Keine Quoten verfügbar.")
+            textbox.insert("end", "Keine Quoten verfügbar.")
         else:
             sorted_odds = sorted(odds_dict.items(), key=lambda x: (int(x[0].split(':')[0]), int(x[0].split(':')[1])))
             for score, odd in sorted_odds:
-                self.shared_odds_textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\n")
+                textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\n")
                 
-        self.shared_odds_textbox.configure(state="disabled")
+        textbox.configure(state="disabled")
         
-        # Blende den Container ein, falls er versteckt ist
-        if not self.shared_odds_frame.winfo_ismapped():
-            self.shared_odds_frame.pack(side="bottom", pady=20, padx=20, fill="x")
+        # Fenster schließen Button
+        close_btn = ctk.CTkButton(popup, text="Schließen", fg_color=self.SOFT_GREEN, hover_color=self.HOVER_GREEN, text_color="#1A3B1A", font=ctk.CTkFont(weight="bold"), command=popup.destroy)
+        close_btn.pack(pady=(0, 20), padx=20)
 
     def start_calculation(self):
         urls = self.get_urls()
@@ -152,7 +148,6 @@ class KicktippApp(ctk.CTk):
         # UI Reset
         self.calc_btn.configure(state="disabled", text="Arbeite...")
         self.scroll_frame.pack_forget()
-        self.shared_odds_frame.pack_forget()
         
         # Clear old result cards
         for widget in self.scroll_frame.winfo_children():
