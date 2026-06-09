@@ -101,7 +101,7 @@ class KicktippApp(ctk.CTk):
         
     def get_urls(self):
         text = self.url_textbox.get("0.0", "end").strip()
-        lines = [line.strip() for line in text.split('\\n') if line.strip().startswith("http")]
+        lines = [line.strip() for line in text.split('\n') if line.strip().startswith("http")]
         return lines
 
     def show_odds(self, match_name, odds_dict):
@@ -114,7 +114,7 @@ class KicktippApp(ctk.CTk):
         else:
             sorted_odds = sorted(odds_dict.items(), key=lambda x: (int(x[0].split(':')[0]), int(x[0].split(':')[1])))
             for score, odd in sorted_odds:
-                self.shared_odds_textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\\n")
+                self.shared_odds_textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\n")
                 
         self.shared_odds_textbox.configure(state="disabled")
 
@@ -169,8 +169,8 @@ class KicktippApp(ctk.CTk):
             self.show_error("Keine Ergebnisse zurückgegeben.")
             return
             
-        self.scroll_frame.pack(pady=10, padx=20, fill="both", expand=True)
-        self.shared_odds_frame.pack(pady=(0, 20), padx=20, fill="x")
+        self.shared_odds_frame.pack(side="bottom", pady=20, padx=20, fill="x")
+        self.scroll_frame.pack(side="top", pady=10, padx=20, fill="both", expand=True)
         
         # Default leere Box
         self.shared_odds_label.configure(text="Rohe Quoten (Klicke bei einem Spiel auf 'Quoten'):")
