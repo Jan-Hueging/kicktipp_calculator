@@ -3,6 +3,30 @@ import threading
 from scraper import scrape_multiple_matches
 from calculator import normalize_odds, find_best_tips
 
+COUNTRY_FLAGS = {
+    "Deutschland": "🇩🇪", "Schottland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Ungarn": "🇭🇺", "Schweiz": "🇨🇭",
+    "Spanien": "🇪🇸", "Kroatien": "🇭🇷", "Italien": "🇮🇹", "Albanien": "🇦🇱",
+    "Slowenien": "🇸🇮", "Dänemark": "🇩🇰", "Serbien": "🇷🇸", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+    "Polen": "🇵🇱", "Niederlande": "🇳🇱", "Österreich": "🇦🇹", "Frankreich": "🇫🇷",
+    "Belgien": "🇧🇪", "Slowakei": "🇸🇰", "Rumänien": "🇷🇴", "Ukraine": "🇺🇦",
+    "Türkei": "🇹🇷", "Georgien": "🇬🇪", "Portugal": "🇵🇹", "Tschechien": "🇨🇿",
+    "Mexiko": "🇲🇽", "Südafrika": "🇿🇦", "Südkorea": "🇰🇷", "Brasilien": "🇧🇷",
+    "Argentinien": "🇦🇷", "USA": "🇺🇸", "Kamerun": "🇨🇲", "Japan": "🇯🇵",
+    "Kanada": "🇨🇦", "Uruguay": "🇺🇾", "Kolumbien": "🇨🇴", "Ecuador": "🇪🇨",
+    "Chile": "🇨🇱", "Peru": "🇵🇪", "Jamaika": "🇯🇲", "Paraguay": "🇵🇾",
+    "Bolivien": "🇧🇴", "Venezuela": "🇻🇪", "Costa Rica": "🇨🇷", "Panama": "🇵🇦",
+    "Marokko": "🇲🇦", "Senegal": "🇸🇳", "Katar": "🇶🇦", "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+    "Irland": "🇮🇪", "Nordirland": "🇬🇧", "Island": "🇮🇸", "Schweden": "🇸🇪",
+    "Norwegen": "🇳🇴", "Finnland": "🇫🇮", "Bosnien": "🇧🇦", "Montenegro": "🇲🇪",
+    "Griechenland": "🇬🇷"
+}
+
+def add_flags(match_name):
+    for country, flag in COUNTRY_FLAGS.items():
+        if country in match_name and flag not in match_name:
+            match_name = match_name.replace(country, f"{flag} {country}")
+    return match_name
+
 class KicktippApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -191,7 +215,9 @@ class KicktippApp(ctk.CTk):
             card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
             
             # Titel
-            title = ctk.CTkLabel(card, text=match.get('match_name', 'Unbekannt'), font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32", wraplength=250)
+            raw_name = match.get('match_name', 'Unbekannt')
+            display_name = add_flags(raw_name)
+            title = ctk.CTkLabel(card, text=display_name, font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32", wraplength=250)
             title.pack(pady=(10, 5), padx=10)
             
             if match.get("error"):
@@ -205,13 +231,27 @@ class KicktippApp(ctk.CTk):
                 medals = ["🥇", "🥈", "🥉"]
                 for i in range(min(3, len(best_tips))):
                     t = best_tips[i]
-                    lbl = ctk.CTkLabel(
-                        card, 
-                        text=f"{medals[i]} {t['tip']:>3}  ➔  {t['expected_value']:>5.3f} Pkt",
-                        font=ctk.CTkFont(size=14, family="Consolas", weight="bold"),
-                        text_color=self.MEDAL_COLORS[i]
-                    )
-                    lbl.pack(pady=2)
+                    tip_text = f"{medals[i]} {t['tip']:>3}  ➔  {t['expected_value']:>5.3f} Pkt"
+                    
+                    if i == 0:
+                        # Graues, abgerundetes Kästchen für den Sieger-Tipp
+                        win_frame = ctk.CTkFrame(card, fg_color="#EAECEE", corner_radius=6)
+                        win_frame.pack(pady=(2, 6), padx=15, fill="x")
+                        lbl = ctk.CTkLabel(
+                            win_frame, 
+                            text=tip_text,
+                            font=ctk.CTkFont(size=15, family="Consolas", weight="bold"),
+                            text_color=self.MEDAL_COLORS[i]
+                        )
+                        lbl.pack(pady=4)
+                    else:
+                        lbl = ctk.CTkLabel(
+                            card, 
+                            text=tip_text,
+                            font=ctk.CTkFont(size=14, family="Consolas", weight="bold"),
+                            text_color=self.MEDAL_COLORS[i]
+                        )
+                        lbl.pack(pady=2)
                     
                 # Odds Button mit Closure (lambda x=...: self.show_odds(x))
                 btn = ctk.CTkButton(
