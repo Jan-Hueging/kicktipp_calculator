@@ -136,6 +136,23 @@ class KicktippApp(ctk.CTk):
         
         # Die Quoten werden jetzt in einem separaten Pop-Up Fenster angezeigt.
         
+        self.check_scrollbar()
+
+    def check_scrollbar(self):
+        try:
+            if hasattr(self, 'scroll_frame') and self.scroll_frame.winfo_ismapped():
+                bbox = self.scroll_frame._parent_canvas.bbox('all')
+                canvas_height = self.scroll_frame._parent_canvas.winfo_height()
+                if bbox:
+                    content_height = bbox[3] - bbox[1]
+                    if content_height > canvas_height:
+                        self.scroll_frame._scrollbar.grid(row=0, column=1, sticky='ns')
+                    else:
+                        self.scroll_frame._scrollbar.grid_remove()
+        except Exception:
+            pass
+        self.after(500, self.check_scrollbar)
+        
     def get_urls(self):
         text = self.url_textbox.get("0.0", "end").strip()
         lines = [line.strip() for line in text.split('\n') if line.strip().startswith("http")]
