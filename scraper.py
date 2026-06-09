@@ -12,15 +12,18 @@ def scrape_tipico_exact_score(url):
     odds_dict = {}
     
     with sync_playwright() as p:
-        # Browser starten (headless=False für Debugging, später auf True setzen)
-        browser = p.chromium.launch(headless=True)
+        # Browser starten (headless=False hilft oft enorm gegen Cloudflare/Bot-Schutz)
+        browser = p.chromium.launch(headless=False)
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport={'width': 1920, 'height': 1080}
         )
         page = context.new_page()
         
         try:
-            page.goto(url, wait_until="networkidle", timeout=30000)
+            # Tipico lädt ständig im Hintergrund nach, 'networkidle' wirft oft Fehler.
+            # Daher nutzen wir 'domcontentloaded' und warten danach manuell kurz.
+            page.goto(url, wait_until="domcontentloaded", timeout=45000)
             print("Seite geladen. Suche nach Quoten...")
             
             # WICHTIG: Tipico ändert oft das Layout. 
@@ -28,7 +31,7 @@ def scrape_tipico_exact_score(url):
             # und versuchen den dazugehörigen Quoten-Button zu finden.
             
             # Warte kurz, falls dynamische Inhalte noch nachladen
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(5000)
             
             # Cookie-Banner wegklicken, falls vorhanden (Optional, oft nicht nötig für reines Lesen, aber sicherer)
             try:
