@@ -25,7 +25,24 @@ def main():
         print("- Tipico blockiert den Scraper (Captcha/Cloudflare).")
         return
         
-    print(f"Erfolgreich {len(odds)} Quoten extrahiert.")
+    print(f"Erfolgreich {len(odds)} Quoten extrahiert.\n")
+    
+    # NEU: Ausgabe der gefundenen Quoten zur Überprüfung
+    print("="*50)
+    print("   GEFUNDENE QUOTEN (ZUR ÜBERPRÜFUNG)   ")
+    print("="*50)
+    
+    # Wir sortieren die Quoten nach Heimtoren und dann Auswärtstoren
+    try:
+        sorted_odds = sorted(odds.items(), key=lambda x: (int(x[0].split(':')[0]), int(x[0].split(':')[1])))
+        for score, odd in sorted_odds:
+            print(f"Ergebnis {score:>4} -> Quote: {odd:.2f}")
+    except:
+        # Falls irgendwas schief geht, einfach unsortiert ausgeben
+        for score, odd in odds.items():
+            print(f"Ergebnis {score:>4} -> Quote: {odd:.2f}")
+            
+    print("="*50)
 
     # 3. Wahrscheinlichkeiten berechnen
     print("\n[2/3] Berechne implizite Wahrscheinlichkeiten...")
