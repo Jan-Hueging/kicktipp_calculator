@@ -85,7 +85,7 @@ class KicktippApp(ctk.CTk):
         # Textbox für mehrere Links
         self.url_textbox = ctk.CTkTextbox(self.input_frame, height=100, fg_color=self.CARD_BG, border_color=self.BORDER_COLOR, border_width=1, text_color=self.TEXT_DARK)
         self.url_textbox.pack(pady=(0, 10), padx=20, fill="x")
-        self.url_textbox.bind("<<Paste>>", self._on_paste)
+        self.url_textbox.bind("<Control-v>", self._on_paste)
         
         # Points Setting Frame
         self.points_frame = ctk.CTkFrame(self.input_frame, fg_color="transparent")
@@ -163,16 +163,16 @@ class KicktippApp(ctk.CTk):
         return lines
 
     def _on_paste(self, event=None):
-        self.after(10, self._ensure_newline)
-        
-    def _ensure_newline(self):
         try:
             clip = self.clipboard_get()
-            if clip and not clip.endswith('\n') and not clip.endswith('\r'):
-                self.url_textbox.insert("insert", "\n")
+            if clip:
+                self.url_textbox.insert("insert", clip)
+                if not clip.endswith('\n') and not clip.endswith('\r'):
+                    self.url_textbox.insert("insert", "\n")
                 self.url_textbox.see("insert")
         except Exception:
             pass
+        return "break"
 
     def show_odds(self, match_name, odds_dict):
         # Neues Fenster für die Quoten erstellen
@@ -269,7 +269,7 @@ class KicktippApp(ctk.CTk):
         
         for match in results:
             card = ctk.CTkFrame(self.scroll_frame, fg_color=self.CARD_BG, border_width=1, border_color=self.BORDER_COLOR, corner_radius=12)
-            card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            card.grid(row=row, column=col, padx=10, pady=10, sticky="nwe")
             
             # Titel Container
             raw_name = match.get('match_name', 'Unbekannt')
