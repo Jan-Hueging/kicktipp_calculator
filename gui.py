@@ -54,13 +54,16 @@ class KicktippApp(ctk.CTk):
         
         # Premium Theme Configuration
         ctk.set_appearance_mode("light")
-        self.configure(fg_color="#F0F3F4")
+        self.configure(fg_color="#F2F2F7")
         
         # Farbdefinitionen
-        self.BEIGE_STRONG = "#E8DFD5" 
-        self.SOFT_GREEN = "#9CCB9C"   
-        self.HOVER_GREEN = "#81B581"
-        self.TEXT_DARK = "#2C3E50"
+        self.APP_BLUE = "#007AFF" # iOS Blue
+        self.APP_BLUE_HOVER = "#0056B3"
+        self.WINNER_BG = "#E5F0FF" # Lighter blue for winner box
+        self.TEXT_DARK = "#1C1C1E"
+        self.TEXT_MUTED = "#8E8E93"
+        self.BORDER_COLOR = "#E5E5EA"
+        self.CARD_BG = "#FFFFFF"
         self.MEDAL_COLORS = ["#D4AF37", "#9E9E9E", "#CD7F32"]
         
         # Header
@@ -68,19 +71,19 @@ class KicktippApp(ctk.CTk):
             self, 
             text="⚽ Kicktipp Batch Rechner", 
             font=ctk.CTkFont(family="Segoe UI", size=26, weight="bold"), 
-            text_color="#145A32" 
+            text_color=self.TEXT_DARK
         )
         self.header.pack(pady=(20, 10))
         
         # --- INPUT FRAME ---
-        self.input_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#D5DBDB")
+        self.input_frame = ctk.CTkFrame(self, fg_color=self.CARD_BG, corner_radius=12, border_width=1, border_color=self.BORDER_COLOR)
         self.input_frame.pack(pady=5, padx=20, fill="x")
         
         self.url_label = ctk.CTkLabel(self.input_frame, text="Tipico Spiel-Links (einen pro Zeile):", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold", size=14))
         self.url_label.pack(pady=(10, 5), padx=20, anchor="w")
         
         # Textbox für mehrere Links
-        self.url_textbox = ctk.CTkTextbox(self.input_frame, height=100, fg_color=self.BEIGE_STRONG, border_color="#D5DBDB", border_width=1, text_color=self.TEXT_DARK)
+        self.url_textbox = ctk.CTkTextbox(self.input_frame, height=100, fg_color=self.CARD_BG, border_color=self.BORDER_COLOR, border_width=1, text_color=self.TEXT_DARK)
         self.url_textbox.pack(pady=(0, 10), padx=20, fill="x")
         
         # Points Setting Frame
@@ -90,21 +93,21 @@ class KicktippApp(ctk.CTk):
         # Exakt
         self.lbl_ex = ctk.CTkLabel(self.points_frame, text="Exakt:", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
         self.lbl_ex.grid(row=0, column=0, padx=(0, 5))
-        self.ent_ex = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.BEIGE_STRONG, justify="center", text_color=self.TEXT_DARK)
+        self.ent_ex = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.CARD_BG, justify="center", border_color=self.BORDER_COLOR, text_color=self.TEXT_DARK)
         self.ent_ex.insert(0, "4")
         self.ent_ex.grid(row=0, column=1, padx=(0, 15))
         
         # Diff
         self.lbl_diff = ctk.CTkLabel(self.points_frame, text="Diff:", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
         self.lbl_diff.grid(row=0, column=2, padx=(0, 5))
-        self.ent_diff = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.BEIGE_STRONG, justify="center", text_color=self.TEXT_DARK)
+        self.ent_diff = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.CARD_BG, justify="center", border_color=self.BORDER_COLOR, text_color=self.TEXT_DARK)
         self.ent_diff.insert(0, "3")
         self.ent_diff.grid(row=0, column=3, padx=(0, 15))
         
         # Tendenz
         self.lbl_tend = ctk.CTkLabel(self.points_frame, text="Tendenz:", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
         self.lbl_tend.grid(row=0, column=4, padx=(0, 5))
-        self.ent_tend = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.BEIGE_STRONG, justify="center", text_color=self.TEXT_DARK)
+        self.ent_tend = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.CARD_BG, justify="center", border_color=self.BORDER_COLOR, text_color=self.TEXT_DARK)
         self.ent_tend.insert(0, "2")
         self.ent_tend.grid(row=0, column=5)
         
@@ -112,16 +115,16 @@ class KicktippApp(ctk.CTk):
         self.calc_btn = ctk.CTkButton(
             self.input_frame, 
             text="Erwartungswerte Berechnen", 
-            fg_color=self.SOFT_GREEN, hover_color=self.HOVER_GREEN, text_color="#1A3B1A", 
-            font=ctk.CTkFont(weight="bold", size=16), height=40,
+            fg_color=self.APP_BLUE, hover_color=self.APP_BLUE_HOVER, text_color="#FFFFFF", 
+            font=ctk.CTkFont(weight="bold", size=16), height=42, corner_radius=8,
             command=self.start_calculation
         )
-        self.calc_btn.pack(pady=10, padx=20, fill="x")
+        self.calc_btn.pack(pady=15, padx=20, fill="x")
         
         # --- PROGRESS ---
         self.progress_frame = ctk.CTkFrame(self, fg_color="transparent")
         
-        self.progress = ctk.CTkProgressBar(self.progress_frame, progress_color=self.SOFT_GREEN, fg_color="#D5DBDB", height=8)
+        self.progress = ctk.CTkProgressBar(self.progress_frame, progress_color=self.APP_BLUE, fg_color=self.BORDER_COLOR, height=8)
         self.progress.pack(pady=(5, 0), fill="x")
         self.progress.set(0)
         
@@ -163,16 +166,16 @@ class KicktippApp(ctk.CTk):
         popup = ctk.CTkToplevel(self)
         popup.title("Quoten überprüfen")
         popup.geometry("300x400")
-        popup.configure(fg_color="#F0F3F4")
+        popup.configure(fg_color="#F2F2F7") # iOS background
         
         # Fokus auf das neue Fenster setzen
         popup.focus()
         popup.attributes("-topmost", True)
         
-        lbl = ctk.CTkLabel(popup, text=match_name, font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32")
+        lbl = ctk.CTkLabel(popup, text=match_name, font=ctk.CTkFont(size=16, weight="bold"), text_color=self.TEXT_DARK)
         lbl.pack(pady=15)
         
-        textbox = ctk.CTkTextbox(popup, fg_color=self.BEIGE_STRONG, text_color=self.TEXT_DARK, border_color="#D5DBDB", border_width=1)
+        textbox = ctk.CTkTextbox(popup, fg_color=self.CARD_BG, text_color=self.TEXT_DARK, border_color=self.BORDER_COLOR, border_width=1)
         textbox.pack(pady=10, padx=20, fill="both", expand=True)
         
         if not odds_dict:
@@ -185,7 +188,12 @@ class KicktippApp(ctk.CTk):
         textbox.configure(state="disabled")
         
         # Fenster schließen Button
-        close_btn = ctk.CTkButton(popup, text="Schließen", fg_color=self.SOFT_GREEN, hover_color=self.HOVER_GREEN, text_color="#1A3B1A", font=ctk.CTkFont(weight="bold"), command=popup.destroy)
+        close_btn = ctk.CTkButton(
+            popup, text="Schließen", 
+            fg_color="#FFFFFF", hover_color=self.BORDER_COLOR, text_color=self.APP_BLUE, 
+            font=ctk.CTkFont(weight="bold", size=14), corner_radius=8,
+            command=popup.destroy
+        )
         close_btn.pack(pady=(0, 20), padx=20)
 
     def start_calculation(self):
@@ -246,13 +254,13 @@ class KicktippApp(ctk.CTk):
         row = 0
         
         for match in results:
-            card = ctk.CTkFrame(self.scroll_frame, fg_color="#FFFFFF", border_width=1, border_color="#D5DBDB", corner_radius=10)
+            card = ctk.CTkFrame(self.scroll_frame, fg_color=self.CARD_BG, border_width=1, border_color=self.BORDER_COLOR, corner_radius=12)
             card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
             
             # Titel Container
             raw_name = match.get('match_name', 'Unbekannt')
             title_frame = ctk.CTkFrame(card, fg_color="transparent")
-            title_frame.pack(pady=(10, 5), padx=10)
+            title_frame.pack(pady=(15, 10), padx=15)
             
             teams = raw_name.replace(" vs ", " - ").split(" - ")
             
@@ -261,57 +269,68 @@ class KicktippApp(ctk.CTk):
                 flag_img = get_flag_image(t_name)
                 
                 if flag_img:
-                    lbl = ctk.CTkLabel(title_frame, text=f" {t_name}", image=flag_img, compound="left", font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32")
+                    lbl = ctk.CTkLabel(title_frame, text=f" {t_name}", image=flag_img, compound="left", font=ctk.CTkFont(size=17, weight="bold"), text_color=self.TEXT_DARK)
                 else:
-                    lbl = ctk.CTkLabel(title_frame, text=t_name, font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32")
+                    lbl = ctk.CTkLabel(title_frame, text=t_name, font=ctk.CTkFont(size=17, weight="bold"), text_color=self.TEXT_DARK)
                 lbl.pack(side="left")
                 
                 if idx < len(teams) - 1:
-                    sep = ctk.CTkLabel(title_frame, text=" - ", font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32")
+                    sep = ctk.CTkLabel(title_frame, text=" - ", font=ctk.CTkFont(size=17, weight="bold"), text_color=self.TEXT_MUTED)
                     sep.pack(side="left", padx=5)
+                    
+            # Divider Line
+            divider = ctk.CTkFrame(card, height=1, fg_color=self.BORDER_COLOR)
+            divider.pack(fill="x", padx=15, pady=(0, 10))
             
             if match.get("error"):
-                err_lbl = ctk.CTkLabel(card, text=match["error"], text_color="#E74C3C", wraplength=250)
-                err_lbl.pack(pady=10, padx=10)
+                err_lbl = ctk.CTkLabel(card, text=match["error"], text_color="#FF3B30", wraplength=250)
+                err_lbl.pack(pady=10, padx=15)
             else:
                 odds = match.get("odds", {})
                 probs = normalize_odds(odds)
                 best_tips = find_best_tips(probs, max_goals=5, pts_exact=self.pts_ex, pts_diff=self.pts_diff, pts_tend=self.pts_tend)
                 
                 medals = ["🥇", "🥈", "🥉"]
+                
+                # Container for the tips to manage alignment
+                tips_container = ctk.CTkFrame(card, fg_color="transparent")
+                tips_container.pack(fill="x", padx=15, pady=(5, 10))
+                
                 for i in range(min(3, len(best_tips))):
                     t = best_tips[i]
-                    tip_text = f"{medals[i]} {t['tip']:>3}  ➔  {t['expected_value']:>5.3f} Pkt"
+                    left_text = f"{medals[i]}  {t['tip']}"
+                    right_text = f"➔  {t['expected_value']:.3f} Pkt"
                     
                     if i == 0:
-                        # Graues, abgerundetes Kästchen für den Sieger-Tipp
-                        win_frame = ctk.CTkFrame(card, fg_color="#EAECEE", corner_radius=6)
-                        win_frame.pack(pady=(2, 6), padx=15, fill="x")
-                        lbl = ctk.CTkLabel(
-                            win_frame, 
-                            text=tip_text,
-                            font=ctk.CTkFont(size=15, family="Consolas", weight="bold"),
-                            text_color=self.MEDAL_COLORS[i]
-                        )
-                        lbl.pack(pady=4)
+                        # Light Blue Background and Gold Text for Winner
+                        row_frame = ctk.CTkFrame(tips_container, fg_color=self.WINNER_BG, corner_radius=8)
+                        row_frame.pack(fill="x", pady=(0, 6))
+                        
+                        lbl_left = ctk.CTkLabel(row_frame, text=left_text, font=ctk.CTkFont(size=16, weight="bold"), text_color=self.MEDAL_COLORS[i])
+                        lbl_left.pack(side="left", padx=15, pady=8)
+                        
+                        lbl_right = ctk.CTkLabel(row_frame, text=right_text, font=ctk.CTkFont(size=16, weight="bold"), text_color=self.MEDAL_COLORS[i])
+                        lbl_right.pack(side="right", padx=15, pady=8)
                     else:
-                        lbl = ctk.CTkLabel(
-                            card, 
-                            text=tip_text,
-                            font=ctk.CTkFont(size=14, family="Consolas", weight="bold"),
-                            text_color=self.MEDAL_COLORS[i]
-                        )
-                        lbl.pack(pady=2)
+                        row_frame = ctk.CTkFrame(tips_container, fg_color="transparent")
+                        row_frame.pack(fill="x", pady=2)
+                        
+                        lbl_left = ctk.CTkLabel(row_frame, text=left_text, font=ctk.CTkFont(size=15, weight="bold"), text_color=self.MEDAL_COLORS[i])
+                        lbl_left.pack(side="left", padx=15, pady=4)
+                        
+                        lbl_right = ctk.CTkLabel(row_frame, text=right_text, font=ctk.CTkFont(size=15, weight="bold"), text_color=self.TEXT_MUTED)
+                        lbl_right.pack(side="right", padx=15, pady=4)
                     
-                # Odds Button mit Closure (lambda x=...: self.show_odds(x))
+                # Apple Style: Gray button with Blue text
                 btn = ctk.CTkButton(
                     card, 
                     text="📊 Quoten", 
-                    fg_color="transparent", hover_color="#E8DFD5", text_color="#E67E22",
-                    height=24,
+                    fg_color="#F2F2F7", hover_color=self.BORDER_COLOR, text_color=self.APP_BLUE,
+                    font=ctk.CTkFont(weight="bold", size=14),
+                    height=32, corner_radius=8,
                     command=lambda m=match['match_name'], o=odds: self.show_odds(m, o)
                 )
-                btn.pack(pady=(10, 10))
+                btn.pack(pady=(5, 15), padx=15, fill="x")
             
             # Grid Progression
             col += 1
