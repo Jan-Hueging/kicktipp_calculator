@@ -2,6 +2,92 @@ from playwright.sync_api import sync_playwright
 import time
 import re
 
+def extract_matches_from_overview(url, progress_callback=None):
+    """
+    Scrapt eine Tipico Übersichtsseite (z.B. EM, WM, Bundesliga) und extrahiert alle Spiel-Links.
+    Gibt eine Liste von Dictionaries zurück: [{"name": "Team A - Team B", "url": "https..."}]
+    """
+    from bs4 import BeautifulSoup
+    import re
+    
+    if progress_callback:
+        progress_callback("Lade Übersicht...")
+        
+    matches = []
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False, args=['--window-position=-32000,-32000'])
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport={'width': 1920, 'height': 1080}
+        )
+        page = context.new_page()
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            page.wait_for_timeout(3000)
+            
+            # Cookie Banner wegklicken, falls es den Scroll blockiert
+            try:
+                page.locator("button:has-text('Akzeptieren'), button:has-text('Zustimmen')").click(timeout=2000)
+            except:
+                pass
+            
+            if progress_callback:
+                progress_callback("Suche Spiele und klappe Listen auf...")
+                
+            # Mehrfach nach unten scrollen und "Mehr laden" Buttons klicken, um alle Spiele zu laden
+            for _ in range(12):
+                page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+                page.wait_for_timeout(1000)
+                
+                # JS um den breiten Pfeil-Button (Load more) zu finden und zu klicken
+                js_click_more = """
+                () => {
+                    let svgs = document.querySelectorAll('svg');
+                    let clicked = false;
+                    for (let svg of svgs) {
+                        let btn = svg.closest('div[role="button"], button') || svg.parentElement;
+                        let text = btn ? (btn.innerText || "").trim() : "";
+                        // Der "Mehr laden" Button bei Tipico ist sehr breit (> 200px) und enthält keinen Text
+                        if (btn && text.length < 5 && btn.clientWidth > 200) {
+                            btn.click();
+                            clicked = true;
+                        }
+                    }
+                    return clicked;
+                }
+                """
+                try:
+                    clicked = page.evaluate(js_click_more)
+                    if clicked:
+                        page.wait_for_timeout(1500) # Warte auf das Nachladen der neuen Spiele
+                except Exception as e:
+                    print("Fehler beim Klicken:", e)
+                
+            html = page.content()
+            soup = BeautifulSoup(html, 'html.parser')
+            links = soup.find_all('a', href=re.compile(r'/event/|/teams/'))
+            
+            seen_urls = set()
+            for a in links:
+                href = a.get('href')
+                if not href.startswith('http'):
+                    href = 'https://sports.tipico.de' + href
+                    
+                # separator=" - " hilft, falls die Teams in separaten Spans sind
+                text = a.get_text(separator=' - ', strip=True)
+                
+                if href not in seen_urls and text:
+                    seen_urls.add(href)
+                    matches.append({"name": text, "url": href})
+                    
+        except Exception as e:
+            print(f"Fehler bei Übersichtsextraktion: {e}")
+            
+        browser.close()
+        
+    return matches
+
 def scrape_multiple_matches(urls, progress_callback=None):
     """
     Öffnet die Tipico-Seite nur EINMAL und geht eine Liste von URLs durch.

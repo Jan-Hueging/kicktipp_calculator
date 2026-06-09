@@ -50,21 +50,24 @@ class KicktippApp(ctk.CTk):
         super().__init__()
         
         self.title("Kicktipp Expected Value Calculator")
-        self.geometry("750x900")
+        self.geometry("750x700")
         
         # Premium Theme Configuration
         ctk.set_appearance_mode("light")
         self.configure(fg_color="#F2F2F7")
         
-        # Farbdefinitionen
-        self.APP_BLUE = "#007AFF" # iOS Blue
-        self.APP_BLUE_HOVER = "#0056B3"
-        self.WINNER_BG = "#E5F0FF" # Lighter blue for winner box
-        self.TEXT_DARK = "#1C1C1E"
-        self.TEXT_MUTED = "#8E8E93"
-        self.BORDER_COLOR = "#E5E5EA"
-        self.CARD_BG = "#FFFFFF"
-        self.MEDAL_COLORS = ["#D4AF37", "#9E9E9E", "#CD7F32"]
+        # Apple iOS Light Mode Theme Colors
+        self.BG_COLOR = "#F2F2F7"           # iOS System Hintergrund (sehr helles Grau)
+        self.CARD_BG = "#FFFFFF"            # Reinweiß für Karten/Boxen
+        self.TEXT_DARK = "#000000"          # Tiefschwarz für perfekten Kontrast
+        self.TEXT_LIGHT = "#8E8E93"         # iOS typisches Grau für Nebentexte
+        self.BORDER_COLOR = "#E5E5EA"       # Sanfte Abgrenzungen
+        self.APP_BLUE = "#007AFF"           # Typisches iOS Blau
+        self.APP_BLUE_HOVER = "#0051A8"     # Dunkleres Blau beim Hover
+        self.APP_BLUE_DISABLED = "#99C8FF"  # Schwaches, helles Blau für deaktivierten Button
+        self.GOLD = "#FFD700"
+        self.SILVER = "#C0C0C0"
+        self.BRONZE = "#CD7F32"
         
         # Header
         self.header = ctk.CTkLabel(
@@ -79,13 +82,35 @@ class KicktippApp(ctk.CTk):
         self.input_frame = ctk.CTkFrame(self, fg_color=self.CARD_BG, corner_radius=12, border_width=1, border_color=self.BORDER_COLOR)
         self.input_frame.pack(pady=5, padx=20, fill="x")
         
-        self.url_label = ctk.CTkLabel(self.input_frame, text="Tipico Spiel-Links (einen pro Zeile):", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold", size=14))
-        self.url_label.pack(pady=(10, 5), padx=20, anchor="w")
+        # Modus Schalter Container
+        self.mode_frame = ctk.CTkFrame(self.input_frame, fg_color="transparent")
+        self.mode_frame.pack(pady=(15, 5), fill="x")
+        
+        self.mode_title = ctk.CTkLabel(self.mode_frame, text="Einzelne Spiele", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold", size=15))
+        self.mode_title.pack(anchor="center")
+        
+        self.mode_var = ctk.StringVar(value="einzel")
+        self.mode_switch = ctk.CTkSwitch(
+            self.mode_frame, 
+            text="", 
+            width=36,
+            switch_width=36,
+            command=self._on_mode_switch,
+            variable=self.mode_var,
+            onvalue="uebersicht",
+            offvalue="einzel",
+            progress_color=self.BORDER_COLOR, # Grau statt Blau, da kein Ein/Aus Zustand
+        )
+        self.mode_switch.pack(pady=5, anchor="center")
+        
+        self.url_label = ctk.CTkLabel(self.input_frame, text="Einzelne Spiel-Links hier einfügen:", text_color=self.TEXT_DARK, font=ctk.CTkFont(size=13))
+        self.url_label.pack(pady=(5, 5), padx=20, anchor="w")
         
         # Textbox für mehrere Links
         self.url_textbox = ctk.CTkTextbox(self.input_frame, height=100, fg_color=self.CARD_BG, border_color=self.BORDER_COLOR, border_width=1, text_color=self.TEXT_DARK)
         self.url_textbox.pack(pady=(0, 10), padx=20, fill="x")
         self.url_textbox.bind("<Control-v>", self._on_paste)
+        self.url_textbox.bind("<KeyRelease>", self._check_input)
         
         # Points Setting Frame
         self.points_frame = ctk.CTkFrame(self.input_frame, fg_color="transparent")
@@ -115,10 +140,11 @@ class KicktippApp(ctk.CTk):
         # Berechnen Button
         self.calc_btn = ctk.CTkButton(
             self.input_frame, 
-            text="Erwartungswerte Berechnen", 
-            fg_color=self.APP_BLUE, hover_color=self.APP_BLUE_HOVER, text_color="#FFFFFF", 
+            text="Start", 
+            state="disabled",
+            fg_color=self.APP_BLUE_DISABLED, hover_color=self.APP_BLUE_HOVER, text_color="#FFFFFF", 
             font=ctk.CTkFont(weight="bold", size=16), height=42, corner_radius=8,
-            command=self.start_calculation
+            command=self._on_calc_btn_click
         )
         self.calc_btn.pack(pady=15, padx=20, fill="x")
         
@@ -145,6 +171,43 @@ class KicktippApp(ctk.CTk):
         lines = [line.strip() for line in text.split('\n') if line.strip().startswith("http")]
         return lines
 
+    def _on_mode_switch(self):
+        if self.mode_var.get() == "uebersicht":
+            self.mode_title.configure(text="Turnier/Liga-Übersicht")
+            self.url_label.configure(text="Einen Übersichts-Link einfügen:")
+            self.calc_btn.configure(text="Start")
+        else:
+            self.mode_title.configure(text="Einzelne Spiele")
+            self.url_label.configure(text="Einzelne Spiel-Links hier einfügen:")
+            self.calc_btn.configure(text="Start")
+            
+    def _on_calc_btn_click(self):
+        urls = self.get_urls()
+        if not urls:
+            return
+            
+        # Nimm den ersten Link zur Prüfung
+        url = urls[0]
+        mode = self.mode_var.get()
+        
+        # Ein direkter Spiel-Link hat in der Regel /event/ oder /teams/ in der URL
+        is_match_link = '/event/' in url or '/teams/' in url
+        
+        # Falscher Modus: Einzelspiel im Übersichts-Modus
+        if mode == "uebersicht" and is_match_link:
+            self.show_error("Falscher Modus! Das ist ein Link für ein einzelnes Spiel.\\nBitte stelle den Schalter oben auf 'Einzelne Spiele'.")
+            return
+            
+        # Falscher Modus: Übersicht im Einzelspiel-Modus
+        if mode == "einzel" and not is_match_link:
+            self.show_error("Falscher Modus! Das ist ein Link zu einer Turnier/Liga-Übersicht.\\nBitte stelle den Schalter oben auf 'Turnier/Liga-Übersicht'.")
+            return
+            
+        if mode == "uebersicht":
+            self.open_selection_popup()
+        else:
+            self.start_calculation()
+
     def _on_paste(self, event=None):
         try:
             clip = self.clipboard_get()
@@ -153,9 +216,103 @@ class KicktippApp(ctk.CTk):
                 if not clip.endswith('\n') and not clip.endswith('\r'):
                     self.url_textbox.insert("insert", "\n")
                 self.url_textbox.see("insert")
+                self.after(10, self._check_input)
         except Exception:
             pass
         return "break"
+        
+    def _check_input(self, event=None):
+        # Enable start button only if there is text in the textbox
+        text = self.url_textbox.get("0.0", "end").strip()
+        if len(text) > 5:
+            self.calc_btn.configure(state="normal", fg_color=self.APP_BLUE)
+        else:
+            self.calc_btn.configure(state="disabled", fg_color=self.APP_BLUE_DISABLED)
+
+    def open_selection_popup(self):
+        urls = self.get_urls()
+        if not urls:
+            self.show_error("Bitte einen Übersichts-Link einfügen.")
+            return
+            
+        url = urls[0] # Nimm den ersten Link
+        
+        self.calc_btn.configure(state="disabled", text="Lade Spiele...", fg_color=self.APP_BLUE_DISABLED)
+        
+        self.progress_frame.pack(pady=5, padx=20, fill="x")
+        self.progress.configure(mode="indeterminate")
+        self.progress.start()
+        self.status_label.configure(text="Lade Übersicht und suche Spiele...")
+        
+        import threading
+        threading.Thread(target=self._run_extraction_thread, args=(url,), daemon=True).start()
+        
+    def _run_extraction_thread(self, url):
+        import scraper
+        def _prog_cb(msg):
+            self.after(0, lambda: self.status_label.configure(text=msg))
+            
+        matches = scraper.extract_matches_from_overview(url, _prog_cb)
+        self.after(0, self._on_extraction_done, matches)
+        
+    def _on_extraction_done(self, matches):
+        self.progress.stop()
+        self.progress_frame.pack_forget()
+        self.calc_btn.configure(state="normal", text="Start", fg_color=self.APP_BLUE)
+        
+        if not matches:
+            self.show_error("Keine Spiele gefunden. Bitte gültigen Link prüfen.")
+            return
+            
+        self._show_selection_popup(matches)
+        
+    def _show_selection_popup(self, matches):
+        popup = ctk.CTkToplevel(self)
+        popup.title(f"{len(matches)} Spiele gefunden")
+        popup.geometry("500x600")
+        popup.configure(fg_color="#F2F2F7")
+        popup.focus()
+        popup.attributes("-topmost", True)
+        
+        lbl = ctk.CTkLabel(popup, text="Welche Spiele möchtest du berechnen?", font=ctk.CTkFont(size=16, weight="bold"), text_color=self.TEXT_DARK)
+        lbl.pack(pady=15)
+        
+        sf = ctk.CTkScrollableFrame(popup, fg_color="#FFFFFF", border_color=self.BORDER_COLOR, border_width=1, corner_radius=12)
+        sf.pack(pady=10, padx=20, fill="both", expand=True)
+        
+        checkboxes = []
+        for match in matches:
+            cb = ctk.CTkCheckBox(sf, text=match['name'], text_color=self.TEXT_DARK, font=ctk.CTkFont(size=14))
+            cb.pack(pady=8, padx=10, anchor="w")
+            checkboxes.append((cb, match['url']))
+            
+        def on_confirm():
+            selected_urls = [url for cb, url in checkboxes if cb.get() == 1]
+            if not selected_urls:
+                # Kein Spiel ausgewählt, nichts tun
+                return
+            
+            popup.destroy()
+            
+            # Alle ausgewählten URLs in das Textfeld schreiben
+            self.url_textbox.delete("0.0", "end")
+            for u in selected_urls:
+                self.url_textbox.insert("end", u + "\n")
+                
+            # Zurück auf Einzel-Modus stellen für das finale Berechnen
+            self.mode_var.set("einzel")
+            self._on_mode_switch()
+            
+            # Sofort berechnen
+            self.start_calculation()
+            
+        confirm_btn = ctk.CTkButton(
+            popup, text=f"Auswahl berechnen", 
+            fg_color=self.APP_BLUE, hover_color=self.APP_BLUE_HOVER, text_color="#FFFFFF", 
+            font=ctk.CTkFont(weight="bold", size=16), height=42, corner_radius=8,
+            command=on_confirm
+        )
+        confirm_btn.pack(pady=20, padx=20, fill="x")
 
     def show_odds(self, match_name, odds_dict):
         # Neues Fenster für die Quoten erstellen
