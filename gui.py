@@ -181,7 +181,8 @@ class KicktippApp(ctk.CTk):
         if not odds_dict:
             textbox.insert("end", "Keine Quoten verfügbar.")
         else:
-            sorted_odds = sorted(odds_dict.items(), key=lambda x: (int(x[0].split(':')[0]), int(x[0].split(':')[1])))
+            # Sortiere nach der Höhe der Quote (aufsteigend)
+            sorted_odds = sorted(odds_dict.items(), key=lambda x: float(x[1]))
             for score, odd in sorted_odds:
                 textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\n")
                 
