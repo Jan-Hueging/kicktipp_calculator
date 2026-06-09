@@ -1,6 +1,6 @@
 import customtkinter as ctk
 import threading
-from scraper import scrape_tipico_exact_score
+from scraper import scrape_multiple_matches
 from calculator import normalize_odds, find_best_tips
 
 class KicktippApp(ctk.CTk):
@@ -8,123 +8,121 @@ class KicktippApp(ctk.CTk):
         super().__init__()
         
         self.title("Kicktipp Expected Value Calculator")
-        self.geometry("550x750")
+        self.geometry("750x900")
         
         # Premium Theme Configuration
         ctk.set_appearance_mode("light")
-        self.configure(fg_color="#F0F3F4") # Sanftes, kühles Hellgrau als Hintergrund
+        self.configure(fg_color="#F0F3F4")
         
         # Farbdefinitionen
-        BEIGE_STRONG = "#E8DFD5" # Stärkeres Beige für Felder und Quoten-Kasten
-        SOFT_GREEN = "#9CCB9C"   # Schwächeres, sanftes Grün für den Button
-        HOVER_GREEN = "#81B581"
+        self.BEIGE_STRONG = "#E8DFD5" 
+        self.SOFT_GREEN = "#9CCB9C"   
+        self.HOVER_GREEN = "#81B581"
+        self.TEXT_DARK = "#2C3E50"
+        self.MEDAL_COLORS = ["#D4AF37", "#9E9E9E", "#CD7F32"]
         
         # Header
         self.header = ctk.CTkLabel(
             self, 
-            text="⚽ Kicktipp Rechner", 
-            font=ctk.CTkFont(family="Segoe UI", size=28, weight="bold"), 
+            text="⚽ Kicktipp Batch Rechner", 
+            font=ctk.CTkFont(family="Segoe UI", size=26, weight="bold"), 
             text_color="#145A32" 
         )
-        self.header.pack(pady=(30, 20))
+        self.header.pack(pady=(20, 10))
         
-        # Input Frame 
+        # --- INPUT FRAME ---
         self.input_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#D5DBDB")
-        self.input_frame.pack(pady=10, padx=30, fill="x")
+        self.input_frame.pack(pady=5, padx=20, fill="x")
         
-        self.url_label = ctk.CTkLabel(self.input_frame, text="Tipico Spiel-Link:", text_color="#2C3E50", font=ctk.CTkFont(weight="bold", size=14))
-        self.url_label.pack(pady=(15, 5), padx=20, anchor="w")
+        self.url_label = ctk.CTkLabel(self.input_frame, text="Tipico Spiel-Links (einen pro Zeile):", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold", size=14))
+        self.url_label.pack(pady=(10, 5), padx=20, anchor="w")
         
-        # Eingabefeld in starkem Beige
-        self.url_entry = ctk.CTkEntry(self.input_frame, placeholder_text="https://sports.tipico.de/...", fg_color=BEIGE_STRONG, border_color="#D5DBDB", height=35, text_color="#2C3E50")
-        self.url_entry.pack(pady=(0, 15), padx=20, fill="x")
+        # Textbox für mehrere Links
+        self.url_textbox = ctk.CTkTextbox(self.input_frame, height=100, fg_color=self.BEIGE_STRONG, border_color="#D5DBDB", border_width=1, text_color=self.TEXT_DARK)
+        self.url_textbox.pack(pady=(0, 10), padx=20, fill="x")
         
         # Points Setting Frame
         self.points_frame = ctk.CTkFrame(self.input_frame, fg_color="transparent")
-        self.points_frame.pack(pady=(0, 20), padx=20, fill="x")
+        self.points_frame.pack(pady=(0, 10), padx=20, fill="x")
         
-        # Exact points
-        self.lbl_ex = ctk.CTkLabel(self.points_frame, text="Exakt:", text_color="#2C3E50", font=ctk.CTkFont(weight="bold"))
+        # Exakt
+        self.lbl_ex = ctk.CTkLabel(self.points_frame, text="Exakt:", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
         self.lbl_ex.grid(row=0, column=0, padx=(0, 5))
-        self.ent_ex = ctk.CTkEntry(self.points_frame, width=45, fg_color=BEIGE_STRONG, border_color="#D5DBDB", justify="center", text_color="#2C3E50")
+        self.ent_ex = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.BEIGE_STRONG, justify="center", text_color=self.TEXT_DARK)
         self.ent_ex.insert(0, "4")
         self.ent_ex.grid(row=0, column=1, padx=(0, 15))
         
-        # Diff points
-        self.lbl_diff = ctk.CTkLabel(self.points_frame, text="Diff:", text_color="#2C3E50", font=ctk.CTkFont(weight="bold"))
+        # Diff
+        self.lbl_diff = ctk.CTkLabel(self.points_frame, text="Diff:", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
         self.lbl_diff.grid(row=0, column=2, padx=(0, 5))
-        self.ent_diff = ctk.CTkEntry(self.points_frame, width=45, fg_color=BEIGE_STRONG, border_color="#D5DBDB", justify="center", text_color="#2C3E50")
+        self.ent_diff = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.BEIGE_STRONG, justify="center", text_color=self.TEXT_DARK)
         self.ent_diff.insert(0, "3")
         self.ent_diff.grid(row=0, column=3, padx=(0, 15))
         
-        # Tendency points
-        self.lbl_tend = ctk.CTkLabel(self.points_frame, text="Tendenz:", text_color="#2C3E50", font=ctk.CTkFont(weight="bold"))
+        # Tendenz
+        self.lbl_tend = ctk.CTkLabel(self.points_frame, text="Tendenz:", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
         self.lbl_tend.grid(row=0, column=4, padx=(0, 5))
-        self.ent_tend = ctk.CTkEntry(self.points_frame, width=45, fg_color=BEIGE_STRONG, border_color="#D5DBDB", justify="center", text_color="#2C3E50")
+        self.ent_tend = ctk.CTkEntry(self.points_frame, width=45, fg_color=self.BEIGE_STRONG, justify="center", text_color=self.TEXT_DARK)
         self.ent_tend.insert(0, "2")
         self.ent_tend.grid(row=0, column=5)
         
-        # Action Button (Schwächeres Grün)
+        # Berechnen Button
         self.calc_btn = ctk.CTkButton(
-            self, 
+            self.input_frame, 
             text="Erwartungswerte Berechnen", 
-            fg_color=SOFT_GREEN, 
-            hover_color=HOVER_GREEN, 
-            text_color="#1A3B1A", # Dunkelgrüne Schrift für Kontrast
-            font=ctk.CTkFont(weight="bold", size=16), 
-            corner_radius=8,
-            height=45,
+            fg_color=self.SOFT_GREEN, hover_color=self.HOVER_GREEN, text_color="#1A3B1A", 
+            font=ctk.CTkFont(weight="bold", size=16), height=40,
             command=self.start_calculation
         )
-        self.calc_btn.pack(pady=15, padx=30, fill="x")
+        self.calc_btn.pack(pady=10, padx=20, fill="x")
         
-        # Progress & Status
-        self.progress = ctk.CTkProgressBar(self, progress_color=SOFT_GREEN, fg_color="#D5DBDB", height=8)
+        # --- PROGRESS ---
+        self.progress_frame = ctk.CTkFrame(self, fg_color="transparent")
+        
+        self.progress = ctk.CTkProgressBar(self.progress_frame, progress_color=self.SOFT_GREEN, fg_color="#D5DBDB", height=8)
+        self.progress.pack(pady=(5, 0), fill="x")
         self.progress.set(0)
         
-        self.status_label = ctk.CTkLabel(self, text="", text_color="#7F8C8D", font=ctk.CTkFont(size=13))
+        self.status_label = ctk.CTkLabel(self.progress_frame, text="", text_color="#7F8C8D", font=ctk.CTkFont(size=13))
         self.status_label.pack()
         
-        # Results Frame
-        self.results_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#D5DBDB")
+        # --- RESULTS AREA ---
+        # Scrollable Frame für alle Spiele (2 Spalten Layout)
+        self.scroll_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        self.scroll_frame.grid_columnconfigure(0, weight=1)
+        self.scroll_frame.grid_columnconfigure(1, weight=1)
         
-        self.res_title = ctk.CTkLabel(self.results_frame, text="🏆 Top 3 Tipps", font=ctk.CTkFont(size=22, weight="bold"), text_color="#145A32")
-        self.res_title.pack(pady=(20, 10))
+        # Shared Odds Textbox am Boden
+        self.shared_odds_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", border_width=1, border_color="#D5DBDB")
+        self.shared_odds_label = ctk.CTkLabel(self.shared_odds_frame, text="Rohe Quoten (Klicke bei einem Spiel auf 'Quoten'):", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
+        self.shared_odds_label.pack(pady=(10, 0), padx=10, anchor="w")
+        self.shared_odds_textbox = ctk.CTkTextbox(self.shared_odds_frame, height=120, fg_color=self.BEIGE_STRONG, text_color=self.TEXT_DARK)
+        self.shared_odds_textbox.pack(pady=10, padx=10, fill="x")
         
-        # 3 separate Labels für Gold, Silber, Bronze
-        self.tip_labels = []
-        for i in range(3):
-            lbl = ctk.CTkLabel(self.results_frame, text="", font=ctk.CTkFont(size=18, family="Consolas", weight="bold"), justify="left")
-            lbl.pack(pady=5, padx=20)
-            self.tip_labels.append(lbl)
+    def get_urls(self):
+        text = self.url_textbox.get("0.0", "end").strip()
+        lines = [line.strip() for line in text.split('\\n') if line.strip().startswith("http")]
+        return lines
+
+    def show_odds(self, match_name, odds_dict):
+        self.shared_odds_label.configure(text=f"Rohe Quoten: {match_name}")
+        self.shared_odds_textbox.configure(state="normal")
+        self.shared_odds_textbox.delete("0.0", "end")
         
-        # Odds Expander Button
-        self.odds_btn = ctk.CTkButton(
-            self.results_frame, 
-            text="📊 Quoten überprüfen ▼", 
-            fg_color="transparent", 
-            hover_color="#E8DFD5", 
-            text_color="#E67E22",
-            font=ctk.CTkFont(weight="bold"),
-            command=self.toggle_odds
-        )
-        self.odds_btn.pack(pady=(15, 15))
-        
-        # Quoten Textbox (Stärkeres Beige)
-        self.odds_textbox = ctk.CTkTextbox(self.results_frame, height=140, fg_color=BEIGE_STRONG, text_color="#2C3E50", border_color="#D5DBDB", border_width=1)
-        
-    def toggle_odds(self):
-        if self.odds_textbox.winfo_ismapped():
-            self.odds_textbox.pack_forget()
-            self.odds_btn.configure(text="📊 Quoten überprüfen ▼")
+        if not odds_dict:
+            self.shared_odds_textbox.insert("end", "Keine Quoten verfügbar.")
         else:
-            self.odds_textbox.pack(pady=(0, 20), padx=20, fill="x")
-            self.odds_btn.configure(text="📊 Quoten einklappen ▲")
-            
+            sorted_odds = sorted(odds_dict.items(), key=lambda x: (int(x[0].split(':')[0]), int(x[0].split(':')[1])))
+            for score, odd in sorted_odds:
+                self.shared_odds_textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\\n")
+                
+        self.shared_odds_textbox.configure(state="disabled")
+
     def start_calculation(self):
-        url = self.url_entry.get().strip()
-        if not url:
-            self.status_label.configure(text="Bitte füge einen Link ein!", text_color="#E74C3C")
+        urls = self.get_urls()
+        if not urls:
+            self.status_label.configure(text="Keine gültigen Links gefunden!", text_color="#E74C3C")
+            self.progress_frame.pack(pady=5, padx=20, fill="x")
             return
             
         try:
@@ -133,72 +131,108 @@ class KicktippApp(ctk.CTk):
             self.pts_tend = int(self.ent_tend.get())
         except ValueError:
             self.status_label.configure(text="Die Punkte müssen Zahlen sein!", text_color="#E74C3C")
+            self.progress_frame.pack(pady=5, padx=20, fill="x")
             return
 
-        # UI State Updates
+        # UI Reset
         self.calc_btn.configure(state="disabled", text="Arbeite...")
-        self.results_frame.pack_forget()
-        self.odds_textbox.pack_forget()
-        self.odds_btn.configure(text="📊 Quoten überprüfen ▼")
+        self.scroll_frame.pack_forget()
+        self.shared_odds_frame.pack_forget()
         
-        self.progress.pack(pady=(0, 10), padx=30, fill="x")
+        # Clear old result cards
+        for widget in self.scroll_frame.winfo_children():
+            widget.destroy()
+            
+        self.progress_frame.pack(pady=5, padx=20, fill="x")
         self.progress.start()
-        self.status_label.configure(text="Browser liest Quoten aus... (ca. 5-10 Sekunden)", text_color="#7F8C8D")
+        self.status_label.configure(text="Starte Browser...", text_color="#7F8C8D")
         
-        # Starte den Scraper in einem separaten Thread
-        threading.Thread(target=self.run_scraping_logic, args=(url,), daemon=True).start()
+        threading.Thread(target=self.run_scraping_logic, args=(urls,), daemon=True).start()
         
-    def run_scraping_logic(self, url):
+    def progress_callback(self, current, total, message):
+        # Update aus dem Thread
+        self.after(0, lambda: self.status_label.configure(text=f"[{current}/{total}] {message}"))
+        
+    def run_scraping_logic(self, urls):
         try:
-            odds = scrape_tipico_exact_score(url)
-            self.after(0, self.finish_calculation, odds)
+            results = scrape_multiple_matches(urls, self.progress_callback)
+            self.after(0, self.finish_calculation, results)
         except Exception as e:
             self.after(0, self.show_error, str(e))
             
-    def finish_calculation(self, odds):
+    def finish_calculation(self, results):
         self.progress.stop()
-        self.progress.pack_forget()
+        self.progress_frame.pack_forget()
         self.calc_btn.configure(state="normal", text="Erwartungswerte Berechnen")
         
-        if not odds or "error" in odds:
-            err_msg = odds.get('error', 'Keine Quoten gefunden') if odds else 'Keine Quoten gefunden'
-            self.status_label.configure(text=f"Fehler: {err_msg}", text_color="#E74C3C")
+        if not results:
+            self.show_error("Keine Ergebnisse zurückgegeben.")
             return
             
-        # Erfolgsmeldung komplett entfernen (wie vom User gewünscht)
-        self.status_label.configure(text="")
+        self.scroll_frame.pack(pady=10, padx=20, fill="both", expand=True)
+        self.shared_odds_frame.pack(pady=(0, 20), padx=20, fill="x")
         
-        # Mathe-Magie
-        probs = normalize_odds(odds)
-        best_tips = find_best_tips(probs, max_goals=5, pts_exact=self.pts_ex, pts_diff=self.pts_diff, pts_tend=self.pts_tend)
+        # Default leere Box
+        self.shared_odds_label.configure(text="Rohe Quoten (Klicke bei einem Spiel auf 'Quoten'):")
+        self.shared_odds_textbox.configure(state="normal")
+        self.shared_odds_textbox.delete("0.0", "end")
+        self.shared_odds_textbox.configure(state="disabled")
         
-        # Gold, Silber, Bronze Farben für die Top 3
-        medal_colors = ["#D4AF37", "#9E9E9E", "#CD7F32"] # Gold, Silber, Bronze Hex-Codes
-        medals = ["🥇", "🥈", "🥉"]
+        # Build Cards in Grid
+        col = 0
+        row = 0
         
-        for i, lbl in enumerate(self.tip_labels):
-            if i < len(best_tips):
-                t = best_tips[i]
-                lbl.configure(
-                    text=f"{medals[i]} {t['tip']:>3}   ➔   {t['expected_value']:>5.3f} Punkte",
-                    text_color=medal_colors[i]
+        for match in results:
+            card = ctk.CTkFrame(self.scroll_frame, fg_color="#FFFFFF", border_width=1, border_color="#D5DBDB", corner_radius=10)
+            card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            
+            # Titel
+            title = ctk.CTkLabel(card, text=match.get('match_name', 'Unbekannt'), font=ctk.CTkFont(size=16, weight="bold"), text_color="#145A32", wraplength=250)
+            title.pack(pady=(10, 5), padx=10)
+            
+            if match.get("error"):
+                err_lbl = ctk.CTkLabel(card, text=match["error"], text_color="#E74C3C", wraplength=250)
+                err_lbl.pack(pady=10, padx=10)
+            else:
+                odds = match.get("odds", {})
+                probs = normalize_odds(odds)
+                best_tips = find_best_tips(probs, max_goals=5, pts_exact=self.pts_ex, pts_diff=self.pts_diff, pts_tend=self.pts_tend)
+                
+                medals = ["🥇", "🥈", "🥉"]
+                for i in range(min(3, len(best_tips))):
+                    t = best_tips[i]
+                    lbl = ctk.CTkLabel(
+                        card, 
+                        text=f"{medals[i]} {t['tip']:>3}  ➔  {t['expected_value']:>5.3f} Pkt",
+                        font=ctk.CTkFont(size=14, family="Consolas", weight="bold"),
+                        text_color=self.MEDAL_COLORS[i]
+                    )
+                    lbl.pack(pady=2)
+                    
+                # Odds Button mit Closure (lambda x=...: self.show_odds(x))
+                btn = ctk.CTkButton(
+                    card, 
+                    text="📊 Quoten", 
+                    fg_color="transparent", hover_color="#E8DFD5", text_color="#E67E22",
+                    height=24,
+                    command=lambda m=match['match_name'], o=odds: self.show_odds(m, o)
                 )
-        
-        # Quoten-Tabelle formatieren
-        self.odds_textbox.configure(state="normal")
-        self.odds_textbox.delete("0.0", "end")
-        sorted_odds = sorted(odds.items(), key=lambda x: (int(x[0].split(':')[0]), int(x[0].split(':')[1])))
-        for score, odd in sorted_odds:
-            self.odds_textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\n")
-        self.odds_textbox.configure(state="disabled")
-        
-        self.results_frame.pack(pady=15, padx=30, fill="both", expand=True)
-        
+                btn.pack(pady=(10, 10))
+            
+            # Grid Progression
+            col += 1
+            if col > 1:
+                col = 0
+                row += 1
+                
     def show_error(self, error_msg):
         self.progress.stop()
-        self.progress.pack_forget()
+        self.progress_frame.pack_forget()
         self.calc_btn.configure(state="normal", text="Erwartungswerte Berechnen")
-        self.status_label.configure(text=f"Fehler aufgetreten: {error_msg}", text_color="#E74C3C")
+        
+        # Zeige Fehler temporär oben
+        self.status_label.configure(text=f"Kritischer Fehler: {error_msg}", text_color="#E74C3C")
+        self.progress_frame.pack(pady=5, padx=20, fill="x")
 
 if __name__ == "__main__":
     app = KicktippApp()
