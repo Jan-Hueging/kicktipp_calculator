@@ -12,25 +12,25 @@ class KicktippApp(ctk.CTk):
         
         # Clean Pastel Theme Configuration
         ctk.set_appearance_mode("light")
-        self.configure(fg_color="#FDFEFE") # Sehr helles pastellweiß
+        self.configure(fg_color="#FBF9F6") # Off-White / Beige Hintergrund
         
         # Header
         self.header = ctk.CTkLabel(
             self, 
             text="⚽ Kicktipp Rechner", 
             font=ctk.CTkFont(family="Segoe UI", size=26, weight="bold"), 
-            text_color="#2C3E50"
+            text_color="#3E5C4E" # Dunkles, edles Grün
         )
         self.header.pack(pady=(30, 20))
         
-        # Input Frame (Pastell Blau)
-        self.input_frame = ctk.CTkFrame(self, fg_color="#EBF5FB", corner_radius=15, border_width=1, border_color="#D6EAF8")
+        # Input Frame (Beige/Weiß)
+        self.input_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=15, border_width=1, border_color="#EAE6DF")
         self.input_frame.pack(pady=10, padx=30, fill="x")
         
         self.url_label = ctk.CTkLabel(self.input_frame, text="Tipico Spiel-Link:", text_color="#34495E", font=ctk.CTkFont(weight="bold"))
         self.url_label.pack(pady=(15, 5), padx=20, anchor="w")
         
-        self.url_entry = ctk.CTkEntry(self.input_frame, placeholder_text="https://sports.tipico.de/...", fg_color="white", border_color="#AED6F1")
+        self.url_entry = ctk.CTkEntry(self.input_frame, placeholder_text="https://sports.tipico.de/...", fg_color="#FBF9F6", border_color="#EAE6DF")
         self.url_entry.pack(pady=(0, 10), padx=20, fill="x")
         
         # Points Setting Frame
@@ -40,21 +40,21 @@ class KicktippApp(ctk.CTk):
         # Exact points
         self.lbl_ex = ctk.CTkLabel(self.points_frame, text="Exakt:", text_color="#34495E")
         self.lbl_ex.grid(row=0, column=0, padx=(0, 5))
-        self.ent_ex = ctk.CTkEntry(self.points_frame, width=40, fg_color="white", border_color="#AED6F1")
+        self.ent_ex = ctk.CTkEntry(self.points_frame, width=40, fg_color="#FBF9F6", border_color="#EAE6DF")
         self.ent_ex.insert(0, "4")
         self.ent_ex.grid(row=0, column=1, padx=(0, 15))
         
         # Diff points
         self.lbl_diff = ctk.CTkLabel(self.points_frame, text="Diff:", text_color="#34495E")
         self.lbl_diff.grid(row=0, column=2, padx=(0, 5))
-        self.ent_diff = ctk.CTkEntry(self.points_frame, width=40, fg_color="white", border_color="#AED6F1")
+        self.ent_diff = ctk.CTkEntry(self.points_frame, width=40, fg_color="#FBF9F6", border_color="#EAE6DF")
         self.ent_diff.insert(0, "3")
         self.ent_diff.grid(row=0, column=3, padx=(0, 15))
         
         # Tendency points
         self.lbl_tend = ctk.CTkLabel(self.points_frame, text="Tendenz:", text_color="#34495E")
         self.lbl_tend.grid(row=0, column=4, padx=(0, 5))
-        self.ent_tend = ctk.CTkEntry(self.points_frame, width=40, fg_color="white", border_color="#AED6F1")
+        self.ent_tend = ctk.CTkEntry(self.points_frame, width=40, fg_color="#FBF9F6", border_color="#EAE6DF")
         self.ent_tend.insert(0, "2")
         self.ent_tend.grid(row=0, column=5)
         
@@ -62,9 +62,9 @@ class KicktippApp(ctk.CTk):
         self.calc_btn = ctk.CTkButton(
             self, 
             text="Erwartungswerte Berechnen", 
-            fg_color="#A2D9CE", 
-            hover_color="#73C6B6", 
-            text_color="#0E6251", 
+            fg_color="#A9CDB0", # Sanftes Salbeigrün
+            hover_color="#8DB495", 
+            text_color="#2C4C34", 
             font=ctk.CTkFont(weight="bold", size=14), 
             corner_radius=20,
             command=self.start_calculation
@@ -72,33 +72,33 @@ class KicktippApp(ctk.CTk):
         self.calc_btn.pack(pady=20, padx=30, fill="x", ipady=5)
         
         # Progress & Status
-        self.progress = ctk.CTkProgressBar(self, progress_color="#A2D9CE", fg_color="#E5E7E9")
+        self.progress = ctk.CTkProgressBar(self, progress_color="#A9CDB0", fg_color="#EAE6DF")
         self.progress.set(0)
         
         self.status_label = ctk.CTkLabel(self, text="", text_color="#7F8C8D")
         self.status_label.pack()
         
-        # Results Frame (Pastell Rot/Orange)
-        self.results_frame = ctk.CTkFrame(self, fg_color="#FDEDEC", corner_radius=15, border_width=1, border_color="#FADBD8")
+        # Results Frame (Beige/Weiß passend zum Input)
+        self.results_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=15, border_width=1, border_color="#EAE6DF")
         
-        self.res_title = ctk.CTkLabel(self.results_frame, text="🏆 Top 3 Tipps", font=ctk.CTkFont(size=20, weight="bold"), text_color="#C0392B")
+        self.res_title = ctk.CTkLabel(self.results_frame, text="🏆 Top 3 Tipps", font=ctk.CTkFont(size=20, weight="bold"), text_color="#3E5C4E")
         self.res_title.pack(pady=(15, 10))
         
-        self.top_tips_label = ctk.CTkLabel(self.results_frame, text="", font=ctk.CTkFont(size=18, family="Consolas"), justify="left", text_color="#7B241C")
+        self.top_tips_label = ctk.CTkLabel(self.results_frame, text="", font=ctk.CTkFont(size=18, family="Consolas"), justify="left", text_color="#2C4C34")
         self.top_tips_label.pack(pady=10, padx=20)
         
-        # Odds Expander Button
+        # Odds Expander Button (Akzentfarbe: Terracotta / Muted Orange)
         self.odds_btn = ctk.CTkButton(
             self.results_frame, 
             text="📊 Quoten überprüfen ▼", 
             fg_color="transparent", 
-            hover_color="#F5B7B1", 
-            text_color="#922B21", 
+            hover_color="#F4D3C9", 
+            text_color="#B3664C", 
             command=self.toggle_odds
         )
         self.odds_btn.pack(pady=(5, 10))
         
-        self.odds_textbox = ctk.CTkTextbox(self.results_frame, height=120, fg_color="white", text_color="#34495E", border_color="#FADBD8", border_width=1)
+        self.odds_textbox = ctk.CTkTextbox(self.results_frame, height=120, fg_color="#FBF9F6", text_color="#34495E", border_color="#EAE6DF", border_width=1)
         
     def toggle_odds(self):
         if self.odds_textbox.winfo_ismapped():
