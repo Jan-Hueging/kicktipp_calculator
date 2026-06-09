@@ -26,51 +26,82 @@ def scrape_tipico_exact_score(url):
             page.goto(url, wait_until="domcontentloaded", timeout=45000)
             print("Seite geladen. Suche nach Quoten...")
             
-            # WICHTIG: Tipico ändert oft das Layout. 
-            # Wir suchen generisch nach Texten, die wie "1:0", "2:1" aussehen 
-            # und versuchen den dazugehörigen Quoten-Button zu finden.
+            # WICHTIG: Tipico ändert oft das Layout und es gibt andere Märkte wie "Halbzeit Ergebnis"
+            # oder Handicap-Wetten, die auch das Format "1:0" haben. Wir müssen den Block isolieren,
+            # der explizit "Ergebnis" heißt. Dafür führen wir ein kleines JavaScript im Browser aus.
             
             # Warte kurz, falls dynamische Inhalte noch nachladen
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(4000)
             
-            # Cookie-Banner wegklicken, falls vorhanden (Optional, oft nicht nötig für reines Lesen, aber sicherer)
+            # Cookie-Banner wegklicken, falls vorhanden
             try:
-                page.locator("button:has-text('Akzeptieren'), button:has-text('Zustimmen')").click(timeout=3000)
+                page.locator("button:has-text('Akzeptieren'), button:has-text('Zustimmen')").click(timeout=2000)
             except:
                 pass
+                
+            print("Extrahiere 'Ergebnis'-Markt...")
             
-            # Finde alle Buttons auf der Seite, die eine Quote enthalten könnten.
-            # Tipico zeigt Quoten oft in Buttons an.
-            buttons = page.locator("button").all()
-            
-            # Wir bauen einen regulären Ausdruck, der z.B. "1:0" oder "1 : 0" erkennt
-            score_pattern = re.compile(r"^\s*(\d+)\s*:\s*(\d+)\s*$")
-            
-            for button in buttons:
-                try:
-                    text = button.inner_text()
-                    # Oft steht im Button Text wie "1:0\n8.50" oder ähnlich.
-                    lines = text.strip().split('\n')
-                    if len(lines) >= 2:
-                        score_line = lines[0].strip()
-                        odd_line = lines[-1].strip()
+            # JavaScript, das im Browser ausgeführt wird:
+            js_script = """
+            () => {
+                const allElements = document.querySelectorAll('*');
+                let header = null;
+                
+                // 1. Finde das Text-Element "Ergebnis"
+                for (const el of allElements) {
+                    const text = el.textContent.trim();
+                    // Wir suchen das exakte Wort in einem Element ohne weitere HTML-Kinder
+                    if ((text === 'Ergebnis' || text === 'Genaues Ergebnis') && el.children.length === 0) {
+                        header = el;
+                        break;
+                    }
+                }
+                
+                if (!header) return {error: "Überschrift 'Ergebnis' nicht gefunden."};
+                
+                // 2. Gehe den DOM-Baum nach oben, bis wir den Haupt-Container dieses Marktes finden.
+                // Der Markt "Genaues Ergebnis" hat immer extrem viele Buttons (>15).
+                let container = header.parentElement;
+                let safeguard = 0;
+                while (container && container.querySelectorAll('button').length < 15 && safeguard < 10) {
+                    container = container.parentElement;
+                    safeguard++;
+                }
+                
+                if (!container) return {error: "Container mit genügend Quoten-Buttons nicht gefunden."};
+                
+                // 3. Extrahiere alle Buttons aus DIESEM spezifischen Container
+                let buttons = container.querySelectorAll('button');
+                let extractedOdds = {};
+                let regex = /^(\\d+)\\s*:\\s*(\\d+)$/; // Erkennt "1:0"
+                
+                for (let btn of buttons) {
+                    let text = btn.innerText.trim();
+                    let lines = text.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+                    
+                    if (lines.length >= 2) {
+                        let scoreLine = lines[0]; // z.B. "1:0"
+                        let oddLine = lines[lines.length - 1]; // z.B. "4,40"
                         
-                        match = score_pattern.match(score_line)
-                        if match:
-                            # Wir haben ein Ergebnis gefunden!
-                            home_goals = match.group(1)
-                            away_goals = match.group(2)
-                            score_key = f"{home_goals}:{away_goals}"
-                            
-                            # Quote parsen (z.B. "8,50" -> 8.5)
-                            try:
-                                odd_val = float(odd_line.replace(',', '.'))
-                                odds_dict[score_key] = odd_val
-                            except ValueError:
-                                continue
-                except Exception as e:
-                    # Manche Elemente sind nicht sichtbar etc.
-                    continue
+                        let match = scoreLine.match(regex);
+                        if (match) {
+                            let oddVal = parseFloat(oddLine.replace(',', '.'));
+                            if (!isNaN(oddVal)) {
+                                extractedOdds[match[1] + ':' + match[2]] = oddVal;
+                            }
+                        }
+                    }
+                }
+                return extractedOdds;
+            }
+            """
+            
+            result = page.evaluate(js_script)
+            
+            if "error" in result:
+                print(f"[Warnung] Scraper meldet: {result['error']}")
+            else:
+                odds_dict = result
 
         except Exception as e:
             print(f"Fehler beim Scrapen: {e}")
