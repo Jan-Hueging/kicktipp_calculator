@@ -21,40 +21,32 @@ def normalize_odds(odds_dict):
         
     return normalized_probs
 
-def calculate_kicktipp_points(tip_home, tip_away, actual_home, actual_away):
+def calculate_kicktipp_points(tip_home, tip_away, actual_home, actual_away, pts_exact=4, pts_diff=3, pts_tend=2):
     """
-    Berechnet die Punkte nach Standard-Kicktipp-Regeln (4-3-2).
-    - 4 Punkte: Exaktes Ergebnis (Tipp 2:1, Ergebnis 2:1)
-    - 3 Punkte: Tordifferenz (Tipp 2:1, Ergebnis 3:2 oder Tipp 1:1, Ergebnis 2:2)
-    - 2 Punkte: Tendenz (Tipp 2:1, Ergebnis 1:0)
-    - 0 Punkte: Falsche Tendenz (Tipp 2:1, Ergebnis 1:2)
+    Berechnet die Punkte nach Kicktipp-Regeln, nun mit flexiblen Punktewerten.
     """
     # 1. Exaktes Ergebnis
     if tip_home == actual_home and tip_away == actual_away:
-        return 4
+        return pts_exact
         
     tip_diff = tip_home - tip_away
     actual_diff = actual_home - actual_away
     
-    # Unentschieden Tordifferenz-Sonderregel: 
-    # Bei Unentschieden ist die Differenz immer 0. Wenn man Unentschieden tippt 
-    # und es geht Unentschieden aus (aber nicht das exakte Ergebnis), 
-    # gibt es immer nur 3 Punkte (bzw. nach Kicktipp manchmal Tendenz, aber standard 3).
-    # Lass uns die Standardregel anwenden: Richtige Tordifferenz = 3 Punkte.
+    # Richtige Tordifferenz
     if tip_diff == actual_diff:
-        return 3
+        return pts_diff
         
     # Tendenz: Sieg Heimmannschaft
     if tip_home > tip_away and actual_home > actual_away:
-        return 2
+        return pts_tend
         
     # Tendenz: Sieg Auswärtsmannschaft
     if tip_home < tip_away and actual_home < actual_away:
-        return 2
+        return pts_tend
         
     return 0
 
-def calculate_expected_value(tip_home, tip_away, normalized_probs):
+def calculate_expected_value(tip_home, tip_away, normalized_probs, pts_exact=4, pts_diff=3, pts_tend=2):
     """
     Berechnet den Erwartungswert (EV) für einen bestimmten Tipp.
     Multipliziert die Wahrscheinlichkeit jedes möglichen Ergebnisses mit 
@@ -68,7 +60,7 @@ def calculate_expected_value(tip_home, tip_away, normalized_probs):
             actual_home = int(actual_home_str.strip())
             actual_away = int(actual_away_str.strip())
             
-            points = calculate_kicktipp_points(tip_home, tip_away, actual_home, actual_away)
+            points = calculate_kicktipp_points(tip_home, tip_away, actual_home, actual_away, pts_exact, pts_diff, pts_tend)
             expected_value += points * prob
         except ValueError:
             # Ignoriere fehlerhafte Strings oder Sonderwetten ("Sonstige", etc.)
@@ -76,7 +68,7 @@ def calculate_expected_value(tip_home, tip_away, normalized_probs):
             
     return expected_value
 
-def find_best_tips(normalized_probs, max_goals=6):
+def find_best_tips(normalized_probs, max_goals=6, pts_exact=4, pts_diff=3, pts_tend=2):
     """
     Spielt alle Tipps von 0:0 bis max_goals:max_goals durch und sortiert sie nach Erwartungswert.
     """
@@ -84,7 +76,7 @@ def find_best_tips(normalized_probs, max_goals=6):
     
     for tip_home in range(max_goals + 1):
         for tip_away in range(max_goals + 1):
-            ev = calculate_expected_value(tip_home, tip_away, normalized_probs)
+            ev = calculate_expected_value(tip_home, tip_away, normalized_probs, pts_exact, pts_diff, pts_tend)
             results.append({
                 "tip": f"{tip_home}:{tip_away}",
                 "expected_value": ev
