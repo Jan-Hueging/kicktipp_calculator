@@ -85,6 +85,7 @@ class KicktippApp(ctk.CTk):
         # Textbox für mehrere Links
         self.url_textbox = ctk.CTkTextbox(self.input_frame, height=100, fg_color=self.CARD_BG, border_color=self.BORDER_COLOR, border_width=1, text_color=self.TEXT_DARK)
         self.url_textbox.pack(pady=(0, 10), padx=20, fill="x")
+        self.url_textbox.bind("<<Paste>>", self._on_paste)
         
         # Points Setting Frame
         self.points_frame = ctk.CTkFrame(self.input_frame, fg_color="transparent")
@@ -160,6 +161,18 @@ class KicktippApp(ctk.CTk):
         text = self.url_textbox.get("0.0", "end").strip()
         lines = [line.strip() for line in text.split('\n') if line.strip().startswith("http")]
         return lines
+
+    def _on_paste(self, event=None):
+        self.after(10, self._ensure_newline)
+        
+    def _ensure_newline(self):
+        try:
+            clip = self.clipboard_get()
+            if clip and not clip.endswith('\n') and not clip.endswith('\r'):
+                self.url_textbox.insert("insert", "\n")
+                self.url_textbox.see("insert")
+        except Exception:
+            pass
 
     def show_odds(self, match_name, odds_dict):
         # Neues Fenster für die Quoten erstellen
