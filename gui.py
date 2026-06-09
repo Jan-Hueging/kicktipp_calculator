@@ -8,104 +8,108 @@ class KicktippApp(ctk.CTk):
         super().__init__()
         
         self.title("Kicktipp Expected Value Calculator")
-        self.geometry("500x700")
+        self.geometry("550x750")
         
-        # Clean Pastel Theme Configuration
+        # Premium Theme Configuration
         ctk.set_appearance_mode("light")
-        self.configure(fg_color="#FBF9F6") # Off-White / Beige Hintergrund
+        self.configure(fg_color="#F0F3F4") # Sanftes, kühles Hellgrau als Hintergrund
         
         # Header
         self.header = ctk.CTkLabel(
             self, 
             text="⚽ Kicktipp Rechner", 
-            font=ctk.CTkFont(family="Segoe UI", size=26, weight="bold"), 
-            text_color="#3E5C4E" # Dunkles, edles Grün
+            font=ctk.CTkFont(family="Segoe UI", size=28, weight="bold"), 
+            text_color="#145A32" # Sehr dunkles, kräftiges Waldgrün
         )
         self.header.pack(pady=(30, 20))
         
-        # Input Frame (Beige/Weiß)
-        self.input_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=15, border_width=1, border_color="#EAE6DF")
+        # Input Frame (Reines Weiß für Kontrast zum Hintergrund)
+        self.input_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#D5DBDB")
         self.input_frame.pack(pady=10, padx=30, fill="x")
         
-        self.url_label = ctk.CTkLabel(self.input_frame, text="Tipico Spiel-Link:", text_color="#34495E", font=ctk.CTkFont(weight="bold"))
+        self.url_label = ctk.CTkLabel(self.input_frame, text="Tipico Spiel-Link:", text_color="#2C3E50", font=ctk.CTkFont(weight="bold", size=14))
         self.url_label.pack(pady=(15, 5), padx=20, anchor="w")
         
-        self.url_entry = ctk.CTkEntry(self.input_frame, placeholder_text="https://sports.tipico.de/...", fg_color="#FBF9F6", border_color="#EAE6DF")
-        self.url_entry.pack(pady=(0, 10), padx=20, fill="x")
+        # Eingabefeld leicht abgesetzt
+        self.url_entry = ctk.CTkEntry(self.input_frame, placeholder_text="https://sports.tipico.de/...", fg_color="#F8F9F9", border_color="#CCD1D1", height=35)
+        self.url_entry.pack(pady=(0, 15), padx=20, fill="x")
         
         # Points Setting Frame
         self.points_frame = ctk.CTkFrame(self.input_frame, fg_color="transparent")
-        self.points_frame.pack(pady=(5, 15), padx=20, fill="x")
+        self.points_frame.pack(pady=(0, 20), padx=20, fill="x")
         
         # Exact points
-        self.lbl_ex = ctk.CTkLabel(self.points_frame, text="Exakt:", text_color="#34495E")
+        self.lbl_ex = ctk.CTkLabel(self.points_frame, text="Exakt:", text_color="#2C3E50", font=ctk.CTkFont(weight="bold"))
         self.lbl_ex.grid(row=0, column=0, padx=(0, 5))
-        self.ent_ex = ctk.CTkEntry(self.points_frame, width=40, fg_color="#FBF9F6", border_color="#EAE6DF")
+        self.ent_ex = ctk.CTkEntry(self.points_frame, width=45, fg_color="#F8F9F9", border_color="#CCD1D1", justify="center")
         self.ent_ex.insert(0, "4")
         self.ent_ex.grid(row=0, column=1, padx=(0, 15))
         
         # Diff points
-        self.lbl_diff = ctk.CTkLabel(self.points_frame, text="Diff:", text_color="#34495E")
+        self.lbl_diff = ctk.CTkLabel(self.points_frame, text="Diff:", text_color="#2C3E50", font=ctk.CTkFont(weight="bold"))
         self.lbl_diff.grid(row=0, column=2, padx=(0, 5))
-        self.ent_diff = ctk.CTkEntry(self.points_frame, width=40, fg_color="#FBF9F6", border_color="#EAE6DF")
+        self.ent_diff = ctk.CTkEntry(self.points_frame, width=45, fg_color="#F8F9F9", border_color="#CCD1D1", justify="center")
         self.ent_diff.insert(0, "3")
         self.ent_diff.grid(row=0, column=3, padx=(0, 15))
         
         # Tendency points
-        self.lbl_tend = ctk.CTkLabel(self.points_frame, text="Tendenz:", text_color="#34495E")
+        self.lbl_tend = ctk.CTkLabel(self.points_frame, text="Tendenz:", text_color="#2C3E50", font=ctk.CTkFont(weight="bold"))
         self.lbl_tend.grid(row=0, column=4, padx=(0, 5))
-        self.ent_tend = ctk.CTkEntry(self.points_frame, width=40, fg_color="#FBF9F6", border_color="#EAE6DF")
+        self.ent_tend = ctk.CTkEntry(self.points_frame, width=45, fg_color="#F8F9F9", border_color="#CCD1D1", justify="center")
         self.ent_tend.insert(0, "2")
         self.ent_tend.grid(row=0, column=5)
         
-        # Action Button (Pastell Grün)
+        # Action Button (Kräftiges Kicktipp-Grün für den "Call to Action")
         self.calc_btn = ctk.CTkButton(
             self, 
             text="Erwartungswerte Berechnen", 
-            fg_color="#A9CDB0", # Sanftes Salbeigrün
-            hover_color="#8DB495", 
-            text_color="#2C4C34", 
-            font=ctk.CTkFont(weight="bold", size=14), 
-            corner_radius=20,
+            fg_color="#27AE60", 
+            hover_color="#1E8449", 
+            text_color="#FFFFFF", 
+            font=ctk.CTkFont(weight="bold", size=16), 
+            corner_radius=8,
+            height=45,
             command=self.start_calculation
         )
-        self.calc_btn.pack(pady=20, padx=30, fill="x", ipady=5)
+        self.calc_btn.pack(pady=15, padx=30, fill="x")
         
         # Progress & Status
-        self.progress = ctk.CTkProgressBar(self, progress_color="#A9CDB0", fg_color="#EAE6DF")
+        self.progress = ctk.CTkProgressBar(self, progress_color="#27AE60", fg_color="#D5DBDB", height=8)
         self.progress.set(0)
         
-        self.status_label = ctk.CTkLabel(self, text="", text_color="#7F8C8D")
+        self.status_label = ctk.CTkLabel(self, text="", text_color="#7F8C8D", font=ctk.CTkFont(size=13))
         self.status_label.pack()
         
-        # Results Frame (Beige/Weiß passend zum Input)
-        self.results_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=15, border_width=1, border_color="#EAE6DF")
+        # Results Frame (Ebenfalls reines Weiß für Kontrast)
+        self.results_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#D5DBDB")
         
-        self.res_title = ctk.CTkLabel(self.results_frame, text="🏆 Top 3 Tipps", font=ctk.CTkFont(size=20, weight="bold"), text_color="#3E5C4E")
-        self.res_title.pack(pady=(15, 10))
+        self.res_title = ctk.CTkLabel(self.results_frame, text="🏆 Top 3 Tipps", font=ctk.CTkFont(size=22, weight="bold"), text_color="#145A32")
+        self.res_title.pack(pady=(20, 10))
         
-        self.top_tips_label = ctk.CTkLabel(self.results_frame, text="", font=ctk.CTkFont(size=18, family="Consolas"), justify="left", text_color="#2C4C34")
+        self.top_tips_label = ctk.CTkLabel(self.results_frame, text="", font=ctk.CTkFont(size=18, family="Consolas", weight="bold"), justify="left", text_color="#1E8449")
         self.top_tips_label.pack(pady=10, padx=20)
         
-        # Odds Expander Button (Akzentfarbe: Terracotta / Muted Orange)
+        # Odds Expander Button (Kräftiges Orange als kleiner Akzent)
         self.odds_btn = ctk.CTkButton(
             self.results_frame, 
             text="📊 Quoten überprüfen ▼", 
             fg_color="transparent", 
-            hover_color="#F4D3C9", 
-            text_color="#B3664C", 
+            hover_color="#FDEBD0", 
+            text_color="#E67E22",
+            font=ctk.CTkFont(weight="bold"),
             command=self.toggle_odds
         )
-        self.odds_btn.pack(pady=(5, 10))
+        self.odds_btn.pack(pady=(10, 15))
         
-        self.odds_textbox = ctk.CTkTextbox(self.results_frame, height=120, fg_color="#FBF9F6", text_color="#34495E", border_color="#EAE6DF", border_width=1)
+        # Quoten Textbox (Leicht grauer Hintergrund)
+        self.odds_textbox = ctk.CTkTextbox(self.results_frame, height=140, fg_color="#F8F9F9", text_color="#2C3E50", border_color="#CCD1D1", border_width=1)
         
     def toggle_odds(self):
         if self.odds_textbox.winfo_ismapped():
             self.odds_textbox.pack_forget()
             self.odds_btn.configure(text="📊 Quoten überprüfen ▼")
         else:
-            self.odds_textbox.pack(pady=(0, 15), padx=20, fill="x")
+            self.odds_textbox.pack(pady=(0, 20), padx=20, fill="x")
             self.odds_btn.configure(text="📊 Quoten einklappen ▲")
             
     def start_calculation(self):
@@ -128,17 +132,16 @@ class KicktippApp(ctk.CTk):
         self.odds_textbox.pack_forget()
         self.odds_btn.configure(text="📊 Quoten überprüfen ▼")
         
-        self.progress.pack(pady=5, padx=30, fill="x")
+        self.progress.pack(pady=(0, 10), padx=30, fill="x")
         self.progress.start()
         self.status_label.configure(text="Browser liest Quoten aus... (ca. 5-10 Sekunden)", text_color="#7F8C8D")
         
-        # Starte den Scraper in einem separaten Thread, damit die GUI nicht einfriert
+        # Starte den Scraper in einem separaten Thread
         threading.Thread(target=self.run_scraping_logic, args=(url,), daemon=True).start()
         
     def run_scraping_logic(self, url):
         try:
             odds = scrape_tipico_exact_score(url)
-            # Nachdem der Thread fertig ist, UI-Updates über self.after im Main-Thread machen
             self.after(0, self.finish_calculation, odds)
         except Exception as e:
             self.after(0, self.show_error, str(e))
@@ -163,9 +166,9 @@ class KicktippApp(ctk.CTk):
         top_text = ""
         medals = ["🥇", "🥈", "🥉"]
         for i, t in enumerate(best_tips[:3]):
-            top_text += f"{medals[i]} {t['tip']:>3}  ➔  {t['expected_value']:.3f} Punkte\n"
+            top_text += f"{medals[i]} {t['tip']:>3}   ➔   {t['expected_value']:>5.3f} Punkte\n"
             if i < 2:
-                top_text += "\n" # Abstand
+                top_text += "\n" 
             
         self.top_tips_label.configure(text=top_text)
         
@@ -174,10 +177,10 @@ class KicktippApp(ctk.CTk):
         self.odds_textbox.delete("0.0", "end")
         sorted_odds = sorted(odds.items(), key=lambda x: (int(x[0].split(':')[0]), int(x[0].split(':')[1])))
         for score, odd in sorted_odds:
-            self.odds_textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:.2f}\n")
+            self.odds_textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\n")
         self.odds_textbox.configure(state="disabled")
         
-        self.results_frame.pack(pady=10, padx=30, fill="both", expand=True)
+        self.results_frame.pack(pady=15, padx=30, fill="both", expand=True)
         
     def show_error(self, error_msg):
         self.progress.stop()
