@@ -92,10 +92,18 @@ class KicktippApp(ctk.CTk):
         self.scroll_frame.grid_columnconfigure(0, weight=1)
         self.scroll_frame.grid_columnconfigure(1, weight=1)
         
-        # Shared Odds Textbox am Boden
+        # Shared Odds Textbox am Boden (wird erst bei Klick sichtbar)
         self.shared_odds_frame = ctk.CTkFrame(self, fg_color="#FFFFFF", border_width=1, border_color="#D5DBDB")
-        self.shared_odds_label = ctk.CTkLabel(self.shared_odds_frame, text="Rohe Quoten (Klicke bei einem Spiel auf 'Quoten'):", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
-        self.shared_odds_label.pack(pady=(10, 0), padx=10, anchor="w")
+        
+        self.odds_header_frame = ctk.CTkFrame(self.shared_odds_frame, fg_color="transparent")
+        self.odds_header_frame.pack(fill="x", padx=10, pady=(10, 0))
+        
+        self.shared_odds_label = ctk.CTkLabel(self.odds_header_frame, text="Rohe Quoten:", text_color=self.TEXT_DARK, font=ctk.CTkFont(weight="bold"))
+        self.shared_odds_label.pack(side="left")
+        
+        self.close_odds_btn = ctk.CTkButton(self.odds_header_frame, text="✖ Schließen", width=80, fg_color="transparent", text_color="#E74C3C", hover_color="#FADBD8", command=self.hide_odds)
+        self.close_odds_btn.pack(side="right")
+        
         self.shared_odds_textbox = ctk.CTkTextbox(self.shared_odds_frame, height=120, fg_color=self.BEIGE_STRONG, text_color=self.TEXT_DARK)
         self.shared_odds_textbox.pack(pady=10, padx=10, fill="x")
         
@@ -103,6 +111,9 @@ class KicktippApp(ctk.CTk):
         text = self.url_textbox.get("0.0", "end").strip()
         lines = [line.strip() for line in text.split('\n') if line.strip().startswith("http")]
         return lines
+
+    def hide_odds(self):
+        self.shared_odds_frame.pack_forget()
 
     def show_odds(self, match_name, odds_dict):
         self.shared_odds_label.configure(text=f"Rohe Quoten: {match_name}")
@@ -117,6 +128,10 @@ class KicktippApp(ctk.CTk):
                 self.shared_odds_textbox.insert("end", f"Ergebnis {score:>4}   |   Quote: {odd:>6.2f}\n")
                 
         self.shared_odds_textbox.configure(state="disabled")
+        
+        # Blende den Container ein, falls er versteckt ist
+        if not self.shared_odds_frame.winfo_ismapped():
+            self.shared_odds_frame.pack(side="bottom", pady=20, padx=20, fill="x")
 
     def start_calculation(self):
         urls = self.get_urls()
@@ -169,14 +184,8 @@ class KicktippApp(ctk.CTk):
             self.show_error("Keine Ergebnisse zurückgegeben.")
             return
             
-        self.shared_odds_frame.pack(side="bottom", pady=20, padx=20, fill="x")
         self.scroll_frame.pack(side="top", pady=10, padx=20, fill="both", expand=True)
-        
-        # Default leere Box
-        self.shared_odds_label.configure(text="Rohe Quoten (Klicke bei einem Spiel auf 'Quoten'):")
-        self.shared_odds_textbox.configure(state="normal")
-        self.shared_odds_textbox.delete("0.0", "end")
-        self.shared_odds_textbox.configure(state="disabled")
+        # Die Quoten-Box bleibt unsichtbar, bis ein Quoten-Button geklickt wird!
         
         # Build Cards in Grid
         col = 0
