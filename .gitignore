@@ -16,3 +16,6 @@ ENV/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Ignore flags folder
+flags/

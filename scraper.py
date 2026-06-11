@@ -69,17 +69,45 @@ def extract_matches_from_overview(url, progress_callback=None):
             links = soup.find_all('a', href=re.compile(r'/event/|/teams/'))
             
             seen_urls = set()
-            for a in links:
-                href = a.get('href')
+            current_date = "Weitere Spiele"
+            
+            # Finde alle <a> Tags (für Spiele) und <div> Tags (für Datum-Header)
+            for el in soup.find_all(['a', 'div']):
+                if el.name == 'div':
+                    if el.get('data-testid') == 'event-date-header':
+                        current_date = el.get_text(strip=True)
+                    continue
+                    
+                # Hier sind wir bei einem <a> Tag
+                href = el.get('href', '')
+                if '/event/' not in href and '/teams/' not in href:
+                    continue
+                    
                 if not href.startswith('http'):
                     href = 'https://sports.tipico.de' + href
                     
                 # separator=" - " hilft, falls die Teams in separaten Spans sind
-                text = a.get_text(separator=' - ', strip=True)
+                text = el.get_text(separator=' - ', strip=True)
                 
-                if href not in seen_urls and text:
+                # Namen kürzen für bessere Darstellung im Programm
+                text = text.replace("Bosnien & Herzegowina", "Bosnien")
+                
+                # Herausfiltern von generischen Tipico-Buttons wie "Alle"
+                if text.lower() in ["alle", "all", "heute", "morgen"]:
+                    continue
+                
+                if href not in seen_urls and text and len(text) > 3:
                     seen_urls.add(href)
-                    matches.append({"name": text, "url": href})
+                    
+                    parts_list = []
+                    parts = text.split(' - ')
+                    if len(parts) >= 3 and ":" in parts[0]:
+                        time_str = parts[0].strip()
+                        team1 = parts[1].strip()
+                        team2 = parts[2].strip()
+                        parts_list = [time_str, team1, team2]
+                        
+                    matches.append({"name": text, "url": href, "date": current_date, "parts": parts_list})
                     
         except Exception as e:
             print(f"Fehler bei Übersichtsextraktion: {e}")
@@ -132,9 +160,38 @@ def scrape_multiple_matches(urls, progress_callback=None):
                 js_script = """
                 () => {
                     // Versuche den Match-Namen aus dem Page-Title zu ziehen
-                    // Typisch: "Mexiko - Südafrika Sportwetten Quoten | Tipico"
                     let title = document.title;
                     let name = title.split('Sportwetten')[0].split('Wetten')[0].split('|')[0].trim();
+                    
+                    // Fallback: Wenn der Titel nur "WM" oder ähnlich generisch ist
+                    if (!name.includes("-") && !name.includes(" vs ")) {
+                        // Präzise Tipico DOM-IDs prüfen
+                        let t1 = document.getElementById('pre-live-header-team1');
+                        let t2 = document.getElementById('pre-live-header-team2');
+                        
+                        if (t1 && t2) {
+                            name = t1.innerText.trim() + " - " + t2.innerText.trim();
+                        } else {
+                            // Letzter Ausweg: Heuristik mit Ausschluss-Wörtern
+                            let candidates = [];
+                            let elems = document.querySelectorAll('h1, h2, span, div');
+                            let badWords = ['torschütze', 'halbzeit', 'handicap', 'hälfte', 'tor', 'minuten', 'ergebnis', 'gewinnt', 'wettmarkt', 'eckbälle', 'karten', 'spieler', 'team', 'asiatisch', 'doppelte chance', 'genaues', 'mehr/weniger', 'wm wetten'];
+                            
+                            for (let el of elems) {
+                                let t = (el.innerText || "").trim();
+                                if (t.includes(" - ") && t.length > 5 && t.length < 60 && !t.includes("\\n")) {
+                                    let isBad = badWords.some(w => t.toLowerCase().includes(w));
+                                    if (!isBad) {
+                                        candidates.push(t);
+                                    }
+                                }
+                            }
+                            if (candidates.length > 0) {
+                                name = candidates[0];
+                            }
+                        }
+                    }
+                    
                     if (!name) name = "Unbekanntes Spiel";
                     
                     let extracted = { name: name, odds: {}, error: null };
@@ -181,6 +238,9 @@ def scrape_multiple_matches(urls, progress_callback=None):
                             }
                         }
                     }
+                    // Leerzeichen und Umbrüche entfernen
+                    extracted.name = extracted.name.replace("\\n", " ").trim();
+                    extracted.name = extracted.name.replace("Bosnien & Herzegowina", "Bosnien");
                     return extracted;
                 }
                 """

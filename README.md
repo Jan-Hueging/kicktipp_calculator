@@ -1,13 +1,27 @@
-# Kicktipp Expected Value Calculator
+# ⚽ Kicktipp Expected Value Calculator
 
-Ein Python-Tool, das Quoten von Wettanbietern (wie Tipico) ausliest und den statistisch besten Tipp (höchster Erwartungswert) für das Kicktipp-Punktesystem berechnet.
+Ein schlankes Python-Tool, das aktuelle Quoten von Wettanbietern (wie Tipico) ausliest und dir den **statistisch besten Tipp** (höchster Erwartungswert) für das Kicktipp-Punktesystem berechnet.
 
-## Zielsetzung
-Das Programm berechnet für alle denkbaren Spielergebnisse (0:0, 1:0, 2:1, etc.) den **Erwartungswert (Expected Value)** basierend auf:
-1. Den impliziten Wahrscheinlichkeiten (abgeleitet aus Buchmacher-Quoten).
-2. Den Kicktipp-Punkteregeln (z.B. 4 Punkte für exaktes Ergebnis, 3 für Tordifferenz, 2 für Tendenz).
+---
 
-## Architektur
-- `scraper.py`: Extrahiert aktuelle Quoten für das "Genaue Ergebnis".
-- `calculator.py`: Rechnet Quoten in Wahrscheinlichkeiten um und kalkuliert den Erwartungswert.
-- `main.py`: Führt die Module zusammen und gibt eine sortierte Rangliste der besten Tipps aus.
+## 🚀 Bedienung
+1. **Modus wählen:** Wähle über den Schalter oben, ob du *Einzelne Spiele* oder eine *Übersicht* einfügen möchtest.
+2. **Link(s) einfügen:** Kopiere die passenden Tipico-Links in das große Textfeld.
+3. **Regeln prüfen:** Passe ggf. die Punkte für *Exakt*, *Diff* und *Tendenz* an.
+4. **Berechnen** 
+
+## 🔗 Beispiellinks (Tipico)
+Je nach ausgewähltem Modus brauchst du unterschiedliche Arten von Links:
+
+**Für "Einzelne Spiele":**
+(Der Link muss in der Regel `/event/` oder `/teams/` enthalten)
+> `https://sports.tipico.de/de/event/12345678`
+> `https://sports.tipico.de/de/teams/deutschland-vs-schottland`
+
+**Für "Turnier/Liga-Übersicht":**
+(Direkte Kategorie- oder Wettbewerbs-Links)
+> `https://sports.tipico.de/de/alle/fussball/deutschland/bundesliga`
+> `https://sports.tipico.de/de/alle/fussball/europa/em-2024`
+
+---
+*Viel Erfolg beim Tippspiel!* 🍀

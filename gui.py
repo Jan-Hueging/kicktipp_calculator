@@ -5,7 +5,21 @@ from calculator import normalize_odds, find_best_tips
 
 import urllib.request
 import io
+import sys
 from PIL import Image
+
+# --- CTkScrollableFrame Global Fast Scroll Patch ---
+old_wheel = ctk.CTkScrollableFrame._mouse_wheel_all
+def _fast_mouse_wheel_all(self, event):
+    if self.check_if_master_is_canvas(event.widget):
+        if sys.platform.startswith("win") and not getattr(self, "_shift_pressed", False):
+            if self._parent_canvas.yview() != (0.0, 1.0):
+                # Standard ist event.delta / 6. Wir nutzen / 1 (6x schneller)
+                self._parent_canvas.yview("scroll", -int(event.delta / 1), "units")
+                return
+    old_wheel(self, event)
+ctk.CTkScrollableFrame._mouse_wheel_all = _fast_mouse_wheel_all
+# ---------------------------------------------------
 
 COUNTRY_CODES = {
     "Deutschland": "de", "Schottland": "gb-sct", "Ungarn": "hu", "Schweiz": "ch",
@@ -22,26 +36,52 @@ COUNTRY_CODES = {
     "Marokko": "ma", "Senegal": "sn", "Katar": "qa", "Wales": "gb-wls",
     "Irland": "ie", "Nordirland": "gb-nir", "Island": "is", "Schweden": "se",
     "Norwegen": "no", "Finnland": "fi", "Bosnien": "ba", "Montenegro": "me",
-    "Griechenland": "gr"
+    "Griechenland": "gr", "Haiti": "ht", "Curacao": "cw", "Australien": "au",
+    "Elfenbeinküste": "ci", "Tunesien": "tn", "Kap Verde": "cv", "Ägypten": "eg",
+    "Saudi Arabien": "sa", "Iran": "ir", "Neuseeland": "nz", "Irak": "iq",
+    "Algerien": "dz", "Jordanien": "jo", "DR Kongo": "cd", "Ghana": "gh",
+    "Usbekistan": "uz"
 }
 
 _FLAG_CACHE = {}
 
 def get_flag_image(country_name):
-    code = COUNTRY_CODES.get(country_name)
+    if not country_name:
+        return None
+    country_name = country_name.strip()
+    
+    code = None
+    # 1. Exact case-insensitive match
+    for c, cd in COUNTRY_CODES.items():
+        if c.lower() == country_name.lower():
+            code = cd
+            break
+            
+    # 2. Substring match fallback
+    if not code:
+        for c, cd in COUNTRY_CODES.items():
+            if c.lower() in country_name.lower() or country_name.lower() in c.lower():
+                code = cd
+                break
+                
     if not code:
         return None
+        
     if code in _FLAG_CACHE:
         return _FLAG_CACHE[code]
+        
+    import os
     try:
-        url = f"https://flagcdn.com/w40/{code}.png"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=3) as response:
-            img_data = response.read()
-        img = Image.open(io.BytesIO(img_data))
-        ctk_img = ctk.CTkImage(light_image=img, size=(24, 18))
-        _FLAG_CACHE[code] = ctk_img
-        return ctk_img
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        flag_path = os.path.join(base_dir, "flags", f"{code}.png")
+        
+        if os.path.exists(flag_path):
+            img = Image.open(flag_path)
+            ctk_img = ctk.CTkImage(light_image=img, size=(24, 18))
+            _FLAG_CACHE[code] = ctk_img
+            return ctk_img
+        else:
+            return None
     except Exception:
         return None
 
@@ -65,9 +105,11 @@ class KicktippApp(ctk.CTk):
         self.APP_BLUE = "#007AFF"           # Typisches iOS Blau
         self.APP_BLUE_HOVER = "#0051A8"     # Dunkleres Blau beim Hover
         self.APP_BLUE_DISABLED = "#99C8FF"  # Schwaches, helles Blau für deaktivierten Button
+        self.WINNER_BG = "#E5F0FF"          # Light blue background for the best tip
         self.GOLD = "#FFD700"
         self.SILVER = "#C0C0C0"
         self.BRONZE = "#CD7F32"
+        self.MEDAL_COLORS = [self.GOLD, self.SILVER, self.BRONZE]
         
         # Header
         self.header = ctk.CTkLabel(
@@ -155,7 +197,7 @@ class KicktippApp(ctk.CTk):
         self.progress.pack(pady=(5, 0), fill="x")
         self.progress.set(0)
         
-        self.status_label = ctk.CTkLabel(self.progress_frame, text="", text_color="#7F8C8D", font=ctk.CTkFont(size=13))
+        self.status_label = ctk.CTkLabel(self.progress_frame, text="", text_color="#7F8C8D", font=ctk.CTkFont(size=13), wraplength=650)
         self.status_label.pack()
         
         # --- RESULTS AREA ---
@@ -195,12 +237,12 @@ class KicktippApp(ctk.CTk):
         
         # Falscher Modus: Einzelspiel im Übersichts-Modus
         if mode == "uebersicht" and is_match_link:
-            self.show_error("Falscher Modus! Das ist ein Link für ein einzelnes Spiel.\\nBitte stelle den Schalter oben auf 'Einzelne Spiele'.")
+            self.show_error("Falscher Modus! Das ist ein Link für ein einzelnes Spiel.\nBitte stelle den Schalter oben auf 'Einzelne Spiele'.")
             return
             
         # Falscher Modus: Übersicht im Einzelspiel-Modus
         if mode == "einzel" and not is_match_link:
-            self.show_error("Falscher Modus! Das ist ein Link zu einer Turnier/Liga-Übersicht.\\nBitte stelle den Schalter oben auf 'Turnier/Liga-Übersicht'.")
+            self.show_error("Falscher Modus! Das ist ein Link zu einer Turnier/Liga-Übersicht.\nBitte stelle den Schalter oben auf 'Turnier/Liga-Übersicht'.")
             return
             
         if mode == "uebersicht":
@@ -269,7 +311,7 @@ class KicktippApp(ctk.CTk):
     def _show_selection_popup(self, matches):
         popup = ctk.CTkToplevel(self)
         popup.title(f"{len(matches)} Spiele gefunden")
-        popup.geometry("500x600")
+        popup.geometry("650x700")
         popup.configure(fg_color="#F2F2F7")
         popup.focus()
         popup.attributes("-topmost", True)
@@ -281,10 +323,123 @@ class KicktippApp(ctk.CTk):
         sf.pack(pady=10, padx=20, fill="both", expand=True)
         
         checkboxes = []
+        
+        # State-Flags, um Endlosschleifen beim Ändern zu vermeiden
+        is_updating_all = [False]
+        is_updating_single = [False]
+        
+        def on_all_toggled():
+            if is_updating_single[0]: return
+            is_updating_all[0] = True
+            
+            check_state = cb_all.get()
+            for cb, _ in checkboxes:
+                if check_state == 1:
+                    cb.select()
+                else:
+                    cb.deselect()
+                    
+            is_updating_all[0] = False
+            
+        def on_single_toggled():
+            if is_updating_all[0]: return
+            is_updating_single[0] = True
+            
+            all_selected = all(cb.get() == 1 for cb, _ in checkboxes)
+            if all_selected:
+                cb_all.select()
+            else:
+                cb_all.deselect()
+                
+            is_updating_single[0] = False
+            
+        # "Alle" Checkbox ganz oben
+        cb_all = ctk.CTkCheckBox(sf, text="Alle", text_color=self.TEXT_DARK, font=ctk.CTkFont(size=15, weight="bold"), command=on_all_toggled)
+        cb_all.pack(pady=(5, 15), padx=10, anchor="w")
+        
+        date_checkboxes = {}
+        current_date_group = None
+        
         for match in matches:
-            cb = ctk.CTkCheckBox(sf, text=match['name'], text_color=self.TEXT_DARK, font=ctk.CTkFont(size=14))
-            cb.pack(pady=8, padx=10, anchor="w")
-            checkboxes.append((cb, match['url']))
+            match_date = match.get('date', 'Weitere Spiele')
+            
+            if match_date not in date_checkboxes:
+                date_checkboxes[match_date] = []
+                
+            # Sobald ein neues Datum auftaucht, bauen wir einen Überschrift-Trenner ein
+            if match_date != current_date_group:
+                current_date_group = match_date
+                
+                # Etwas mehr Abstand nach oben für den Trenner, es sei denn es ist der Erste
+                pad_top = 5 if current_date_group == matches[0].get('date', 'Weitere Spiele') else 20
+                
+                date_lbl = ctk.CTkLabel(
+                    sf, 
+                    text=current_date_group, 
+                    font=ctk.CTkFont(size=14, weight="bold"), 
+                    text_color=self.APP_BLUE,
+                    cursor="hand2"
+                )
+                date_lbl.pack(pady=(pad_top, 5), padx=10, anchor="w")
+                
+                def make_toggle_date(d):
+                    def toggle_date(event):
+                        cbs = date_checkboxes[d]
+                        all_selected = all(cb.get() == 1 for cb in cbs)
+                        for cb in cbs:
+                            if all_selected:
+                                cb.deselect()
+                            else:
+                                cb.select()
+                        on_single_toggled()
+                    return toggle_date
+                    
+                date_lbl.bind("<Button-1>", make_toggle_date(match_date))
+                
+            parts = match.get("parts", [])
+            if parts and len(parts) == 3:
+                row_frame = ctk.CTkFrame(sf, fg_color="transparent")
+                row_frame.pack(fill="x", pady=2, padx=25)
+                
+                cb = ctk.CTkCheckBox(row_frame, text="", width=24, command=on_single_toggled)
+                cb.grid(row=0, column=0, padx=(0, 10))
+                
+                t1_name = parts[1]
+                if len(t1_name) > 15:
+                    t1_name = t1_name[:15]
+                    
+                t2_name = parts[2]
+                if len(t2_name) > 15:
+                    t2_name = t2_name[:15]
+                
+                time_lbl = ctk.CTkLabel(row_frame, text=f"🕒 {parts[0]} ➔", font=ctk.CTkFont(size=14), text_color=self.TEXT_DARK, width=85, anchor="w")
+                time_lbl.grid(row=0, column=1)
+                
+                flag1_img = get_flag_image(parts[1])
+                flag1_lbl = ctk.CTkLabel(row_frame, text="", image=flag1_img, width=30)
+                flag1_lbl.grid(row=0, column=2)
+                
+                t1_lbl = ctk.CTkLabel(row_frame, text=t1_name, font=ctk.CTkFont(size=14), text_color=self.TEXT_DARK, width=110, anchor="w")
+                t1_lbl.grid(row=0, column=3, padx=(5, 5))
+                
+                hyphen = ctk.CTkLabel(row_frame, text="-", font=ctk.CTkFont(size=14, weight="bold"), text_color=self.TEXT_DARK, width=15)
+                hyphen.grid(row=0, column=4)
+                
+                flag2_img = get_flag_image(parts[2])
+                flag2_lbl = ctk.CTkLabel(row_frame, text="", image=flag2_img, width=30)
+                flag2_lbl.grid(row=0, column=5, padx=(5, 0))
+                
+                t2_lbl = ctk.CTkLabel(row_frame, text=t2_name, font=ctk.CTkFont(size=14), text_color=self.TEXT_DARK, width=110, anchor="w")
+                t2_lbl.grid(row=0, column=6, padx=(5, 0))
+                
+                checkboxes.append((cb, match['url']))
+                date_checkboxes[match_date].append(cb)
+            else:
+                display_text = match['name']
+                cb = ctk.CTkCheckBox(sf, text=display_text, text_color=self.TEXT_DARK, font=ctk.CTkFont(size=14), command=on_single_toggled)
+                cb.pack(pady=6, padx=25, anchor="w")
+                checkboxes.append((cb, match['url']))
+                date_checkboxes[match_date].append(cb)
             
         def on_confirm():
             selected_urls = [url for cb, url in checkboxes if cb.get() == 1]
@@ -429,7 +584,7 @@ class KicktippApp(ctk.CTk):
                 lbl.pack(side="left")
                 
                 if idx < len(teams) - 1:
-                    sep = ctk.CTkLabel(title_frame, text=" - ", font=ctk.CTkFont(size=17, weight="bold"), text_color=self.TEXT_MUTED)
+                    sep = ctk.CTkLabel(title_frame, text=" - ", font=ctk.CTkFont(size=17, weight="bold"), text_color=self.TEXT_LIGHT)
                     sep.pack(side="left", padx=5)
                     
             # Divider Line
@@ -472,7 +627,7 @@ class KicktippApp(ctk.CTk):
                         lbl_left = ctk.CTkLabel(row_frame, text=left_text, font=ctk.CTkFont(size=15, weight="bold"), text_color=self.MEDAL_COLORS[i])
                         lbl_left.pack(side="left", padx=15, pady=4)
                         
-                        lbl_right = ctk.CTkLabel(row_frame, text=right_text, font=ctk.CTkFont(size=15, weight="bold"), text_color=self.TEXT_MUTED)
+                        lbl_right = ctk.CTkLabel(row_frame, text=right_text, font=ctk.CTkFont(size=15, weight="bold"), text_color=self.TEXT_LIGHT)
                         lbl_right.pack(side="right", padx=15, pady=4)
                     
                 # Apple Style: Gray button with Blue text
