@@ -32,9 +32,12 @@ def calculate_kicktipp_points(tip_home, tip_away, actual_home, actual_away, pts_
     tip_diff = tip_home - tip_away
     actual_diff = actual_home - actual_away
     
-    # Richtige Tordifferenz
+    # Richtige Tordifferenz (Bei Unentschieden gibt es nur Tendenzpunkte, keine Differenzpunkte)
     if tip_diff == actual_diff:
-        return pts_diff
+        if tip_diff != 0:
+            return pts_diff
+        else:
+            return pts_tend
         
     # Tendenz: Sieg Heimmannschaft
     if tip_home > tip_away and actual_home > actual_away:
